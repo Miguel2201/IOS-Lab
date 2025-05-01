@@ -160,7 +160,8 @@ int main()
 	Model LogoIOS((char*)"Models/logoIOS.obj");
 	Model Mesapequena((char*)"Models/mesapequena.obj");
 	Model Pantalla((char*)"Models/pantalla.obj");
-	Model SillonNaranja((char*)"Models/silla.obj");
+	Model Escritorio2((char*)"Models/escritorio2.obj");
+
 
 
 	// First, set the container's VAO (and VBO)
@@ -307,84 +308,123 @@ int main()
 
 
 
-		//Carga de modelo 
+		//Carga de modelos
+		//Laboratorio
 		view = camera.GetViewMatrix();
 		model = glm::mat4(1);
-		//model = glm::rotate(model, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotación 45° en Y
-		model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+		//model = glm::rotate(model, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+		model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.5f));
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		Laboratorio.Draw(lightingShader);
 		glBindVertexArray(0);
 
+		//LogoIOS
 		model = glm::mat4(1);
-		model = glm::translate(model, glm::vec3(-17.75f, 3.1f, 0.0f));
-		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotación 45° en Y
-		model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-		Escritorio.Draw(lightingShader);
-		glBindVertexArray(0);
-
-		model = glm::mat4(1);
-		model = glm::translate(model, glm::vec3(-10.75f, 3.1f, 0.0f));
-		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotación 45° en Y
-		model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-		Escritorio.Draw(lightingShader);
-		glBindVertexArray(0);
-
-		model = glm::mat4(1);
-		model = glm::translate(model, glm::vec3(-2.75f, 3.1f, 0.0f));
-		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotación 45° en Y
-		model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-		Escritorio.Draw(lightingShader);
-		glBindVertexArray(0);
-
-		model = glm::mat4(1);
-		model = glm::translate(model, glm::vec3(5.75f, 3.1f, 0.0f));
-		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotación 45° en Y
-		model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-		Escritorio.Draw(lightingShader);
-		glBindVertexArray(0);
-
-		model = glm::mat4(1);
-		model = glm::translate(model, glm::vec3(-25.75f, 5.0f, 7.0f));
-		model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotación 45° en Y
-		model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+		model = glm::translate(model, glm::vec3(-25.75f, 5.0f, 11.0f));
+		model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(1.0f, 1.5f, 1.0f));
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		LogoIOS.Draw(lightingShader);
 		glBindVertexArray(0);
 
+		//Pantalla
 		model = glm::mat4(1);
-		model = glm::translate(model, glm::vec3(5.75f, 0.10f, 12.0f));
-		//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotación 45° en Y
+		model = glm::translate(model, glm::vec3(-25.75f, 4.0f, 6.0f));
+		model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(2.0f, 2.0f, 2.0f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Pantalla.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-25.75f, 4.0f, 16.0f));
+		model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(2.0f, 2.0f, 2.0f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Pantalla.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		//Escritorio
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-17.75f, 3.1f, 1.5f));
+		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+		model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Escritorio.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-10.75f, 3.1f, 1.5f));
+		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+		model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Escritorio.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-2.75f, 3.1f, 1.5f));
+		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+		model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Escritorio.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(5.75f, 3.1f, 1.5f));
+		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+		model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Escritorio.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		//Escritorio2
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-20.2f, 0.21f, 18.0f));
+		//model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+		model = glm::scale(model, glm::vec3(0.06f, 0.08f, 0.06f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Escritorio2.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-9.57f, 0.21f, 8.75f));
+		model = glm::rotate(model, glm::radians(40.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.06f, 0.08f, 0.06f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Escritorio2.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-5.0f, 0.21f, 8.0f));
+		//model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+		model = glm::scale(model, glm::vec3(0.06f, 0.08f, 0.06f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Escritorio2.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-0.57f, 0.21f, 15.75f));
+		model = glm::rotate(model, glm::radians(40.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.06f, 0.08f, 0.06f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Escritorio2.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(4.0f, 0.21f, 15.0f));
+		//model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+		model = glm::scale(model, glm::vec3(0.06f, 0.08f, 0.06f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Escritorio2.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		//Mesapequena
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(5.75f, 0.17f, 22.0f));
+		//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+		model = glm::scale(model, glm::vec3(2.0f, 2.5f, 2.0f));
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		Mesapequena.Draw(lightingShader);
-		glBindVertexArray(0);
-
-		model = glm::mat4(1);
-		model = glm::translate(model, glm::vec3(-25.75f, 4.0f, 2.0f));
-		model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotación 45° en Y
-		model = glm::scale(model, glm::vec3(2.0f, 2.0f, 2.0f));
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-		Pantalla.Draw(lightingShader);
-		glBindVertexArray(0);
-
-		model = glm::mat4(1);
-		model = glm::translate(model, glm::vec3(-25.75f, 4.0f, 12.0f));
-		model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotación 45° en Y
-		model = glm::scale(model, glm::vec3(2.0f, 2.0f, 2.0f));
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-		Pantalla.Draw(lightingShader);
-		glBindVertexArray(0);
-
-		model = glm::translate(model, glm::vec3(-15.75f, 2.0f, 12.0f));
-		model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotación 45° en Y
-		model = glm::scale(model, glm::vec3(2.0f, 2.0f, 2.0f));
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-		SillonNaranja.Draw(lightingShader);
 		glBindVertexArray(0);
 
 

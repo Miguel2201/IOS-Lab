@@ -1,24 +1,24 @@
 ﻿  IOSLab.cpp
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(188,24): warning C4244: 'inicializando': conversión de 'double' a 'GLfloat'; posible pérdida de datos
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(227,21): warning C4244: '=': conversión de 'double' a 'T'; posible pérdida de datos
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(227,21): warning C4244:         with
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(227,21): warning C4244:         [
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(227,21): warning C4244:             T=float
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(227,21): warning C4244:         ]
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(228,21): warning C4244: '=': conversión de 'double' a 'T'; posible pérdida de datos
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(228,21): warning C4244:         with
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(228,21): warning C4244:         [
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(228,21): warning C4244:             T=float
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(228,21): warning C4244:         ]
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(229,21): warning C4244: '=': conversión de 'double' a 'T'; posible pérdida de datos
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(229,21): warning C4244:         with
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(229,21): warning C4244:         [
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(229,21): warning C4244:             T=float
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(229,21): warning C4244:         ]
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(475,11): warning C4244: '=': conversión de 'double' a 'GLfloat'; posible pérdida de datos
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(476,11): warning C4244: '=': conversión de 'double' a 'GLfloat'; posible pérdida de datos
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(480,18): warning C4244: 'inicializando': conversión de 'double' a 'GLfloat'; posible pérdida de datos
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(481,18): warning C4244: 'inicializando': conversión de 'double' a 'GLfloat'; posible pérdida de datos
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(483,10): warning C4244: '=': conversión de 'double' a 'GLfloat'; posible pérdida de datos
-C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(484,10): warning C4244: '=': conversión de 'double' a 'GLfloat'; posible pérdida de datos
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(192,24): warning C4244: 'inicializando': conversión de 'double' a 'GLfloat'; posible pérdida de datos
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(231,21): warning C4244: '=': conversión de 'double' a 'T'; posible pérdida de datos
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(231,21): warning C4244:         with
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(231,21): warning C4244:         [
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(231,21): warning C4244:             T=float
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(231,21): warning C4244:         ]
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(232,21): warning C4244: '=': conversión de 'double' a 'T'; posible pérdida de datos
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(232,21): warning C4244:         with
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(232,21): warning C4244:         [
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(232,21): warning C4244:             T=float
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(232,21): warning C4244:         ]
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(233,21): warning C4244: '=': conversión de 'double' a 'T'; posible pérdida de datos
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(233,21): warning C4244:         with
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(233,21): warning C4244:         [
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(233,21): warning C4244:             T=float
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(233,21): warning C4244:         ]
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(531,11): warning C4244: '=': conversión de 'double' a 'GLfloat'; posible pérdida de datos
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(532,11): warning C4244: '=': conversión de 'double' a 'GLfloat'; posible pérdida de datos
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(536,18): warning C4244: 'inicializando': conversión de 'double' a 'GLfloat'; posible pérdida de datos
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(537,18): warning C4244: 'inicializando': conversión de 'double' a 'GLfloat'; posible pérdida de datos
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(539,10): warning C4244: '=': conversión de 'double' a 'GLfloat'; posible pérdida de datos
+C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\configInicial\IOSLab.cpp(540,10): warning C4244: '=': conversión de 'double' a 'GLfloat'; posible pérdida de datos
   configInicial.vcxproj -> C:\Users\miguelrodriguez\Desktop\CGIH\IOS Lab\Debug\configInicial.exe

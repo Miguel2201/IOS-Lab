@@ -161,6 +161,7 @@ int main()
 	Model Mesapequena((char*)"Models/mesapequena.obj");
 	Model Pantalla((char*)"Models/pantalla.obj");
 	Model Escritorio2((char*)"Models/escritorio2.obj");
+	Model Silla((char*)"Models/silla.obj");
 
 
 
@@ -320,7 +321,7 @@ int main()
 
 		//LogoIOS
 		model = glm::mat4(1);
-		model = glm::translate(model, glm::vec3(-25.75f, 5.0f, 11.0f));
+		model = glm::translate(model, glm::vec3(-25.75f, 5.5f, 11.0f));
 		model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(1.0f, 1.5f, 1.0f));
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -346,17 +347,17 @@ int main()
 
 		//Escritorio
 		model = glm::mat4(1);
-		model = glm::translate(model, glm::vec3(-17.75f, 3.1f, 1.5f));
+		model = glm::translate(model, glm::vec3(-20.25f, 3.1f, 1.5f));
 		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
-		model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(1.25f, 1.1f, 1.2f));
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		Escritorio.Draw(lightingShader);
 		glBindVertexArray(0);
 
 		model = glm::mat4(1);
-		model = glm::translate(model, glm::vec3(-10.75f, 3.1f, 1.5f));
+		model = glm::translate(model, glm::vec3(-11.75f, 3.1f, 1.5f));
 		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
-		model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(1.25f, 1.1f, 1.2f));
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		Escritorio.Draw(lightingShader);
 		glBindVertexArray(0);
@@ -364,7 +365,7 @@ int main()
 		model = glm::mat4(1);
 		model = glm::translate(model, glm::vec3(-2.75f, 3.1f, 1.5f));
 		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
-		model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(1.25f, 1.1f, 1.2f));
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		Escritorio.Draw(lightingShader);
 		glBindVertexArray(0);
@@ -372,59 +373,165 @@ int main()
 		model = glm::mat4(1);
 		model = glm::translate(model, glm::vec3(5.75f, 3.1f, 1.5f));
 		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
-		model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(1.25f, 1.1f, 1.2f));
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		Escritorio.Draw(lightingShader);
 		glBindVertexArray(0);
 
 		//Escritorio2
 		model = glm::mat4(1);
-		model = glm::translate(model, glm::vec3(-20.2f, 0.21f, 18.0f));
+		model = glm::translate(model, glm::vec3(-22.0f, 0.25f, 15.0f));
 		//model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
-		model = glm::scale(model, glm::vec3(0.06f, 0.08f, 0.06f));
+		model = glm::scale(model, glm::vec3(0.06f, 0.10f, 0.06f));
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		Escritorio2.Draw(lightingShader);
 		glBindVertexArray(0);
 
 		model = glm::mat4(1);
-		model = glm::translate(model, glm::vec3(-9.57f, 0.21f, 8.75f));
+		model = glm::translate(model, glm::vec3(-9.57f, 0.25f, 8.75f));
 		model = glm::rotate(model, glm::radians(40.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		model = glm::scale(model, glm::vec3(0.06f, 0.08f, 0.06f));
+		model = glm::scale(model, glm::vec3(0.06f, 0.10f, 0.06f));
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		Escritorio2.Draw(lightingShader);
 		glBindVertexArray(0);
 
 		model = glm::mat4(1);
-		model = glm::translate(model, glm::vec3(-5.0f, 0.21f, 8.0f));
+		model = glm::translate(model, glm::vec3(-5.0f, 0.25f, 8.0f));
 		//model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
-		model = glm::scale(model, glm::vec3(0.06f, 0.08f, 0.06f));
+		model = glm::scale(model, glm::vec3(0.06f, 0.10f, 0.06f));
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		Escritorio2.Draw(lightingShader);
 		glBindVertexArray(0);
 
 		model = glm::mat4(1);
-		model = glm::translate(model, glm::vec3(-0.57f, 0.21f, 15.75f));
+		model = glm::translate(model, glm::vec3(-0.57f, 0.25f, 15.75f));
 		model = glm::rotate(model, glm::radians(40.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		model = glm::scale(model, glm::vec3(0.06f, 0.08f, 0.06f));
+		model = glm::scale(model, glm::vec3(0.06f, 0.10f, 0.06f));
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		Escritorio2.Draw(lightingShader);
 		glBindVertexArray(0);
 
 		model = glm::mat4(1);
-		model = glm::translate(model, glm::vec3(4.0f, 0.21f, 15.0f));
+		model = glm::translate(model, glm::vec3(4.0f, 0.25f, 15.0f));
 		//model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
-		model = glm::scale(model, glm::vec3(0.06f, 0.08f, 0.06f));
+		model = glm::scale(model, glm::vec3(0.06f, 0.10f, 0.06f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Escritorio2.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-11.57f, 0.25f, 14.75f));
+		model = glm::rotate(model, glm::radians(40.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.06f, 0.10f, 0.06f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Escritorio2.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-7.0f, 0.25f, 14.0f));
+		//model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+		model = glm::scale(model, glm::vec3(0.06f, 0.10f, 0.06f));
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		Escritorio2.Draw(lightingShader);
 		glBindVertexArray(0);
 
 		//Mesapequena
 		model = glm::mat4(1);
-		model = glm::translate(model, glm::vec3(5.75f, 0.17f, 22.0f));
+		model = glm::translate(model, glm::vec3(5.75f, 0.18f, 22.0f));
 		//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
-		model = glm::scale(model, glm::vec3(2.0f, 2.5f, 2.0f));
+		model = glm::scale(model, glm::vec3(2.5f, 2.7f, 2.5f));
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		Mesapequena.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		//Silla-Escritorio
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-22.9f, 0.17f, 2.0f));
+		//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.092f, 0.092f, 0.092f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Silla.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-20.2f, 0.17f, 2.0f));
+		//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.092f, 0.092f, 0.092f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Silla.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-14.5f, 0.17f, 2.0f));
+		//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.092f, 0.092f, 0.092f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Silla.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-11.75f, 0.17f, 2.0f));
+		//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.092f, 0.092f, 0.092f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Silla.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-5.5f, 0.17f, 2.0f));
+		//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.092f, 0.092f, 0.092f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Silla.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-2.75f, 0.17f, 2.0f));
+		//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.092f, 0.092f, 0.092f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Silla.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(3.0f, 0.17f, 2.0f));
+		//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.092f, 0.092f, 0.092f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Silla.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(5.75f, 0.17f, 2.0f));
+		//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.092f, 0.092f, 0.092f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Silla.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		//Silla-Escritorio2
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-22.9f, 0.17f, 15.0f));
+		//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.092f, 0.092f, 0.092f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Silla.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-20.5f, 0.17f, 15.0f));
+		model = glm::rotate(model, glm::radians(-35.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.092f, 0.092f, 0.092f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Silla.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-10.75f, 0.17f, 13.75f));
+		//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.092f, 0.092f, 0.092f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Silla.Draw(lightingShader);
 		glBindVertexArray(0);
 
 

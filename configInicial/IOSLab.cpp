@@ -163,7 +163,7 @@ int main()
 	Model Escritorio2((char*)"Models/escritorio2.obj");
 	Model pizarron((char*)"Models/pizarron.obj");
 	Model aireAcondicionado((char*)"Models/aireAcondicionado.obj");
-
+	Model proyector((char*)"Models/proyector.obj");
 
 	// First, set the container's VAO (and VBO)
 	GLuint VBO, VAO;
@@ -352,6 +352,14 @@ int main()
 		model = glm::scale(model, glm::vec3(0.3f, 0.7f, 0.15f));
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		aireAcondicionado.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		//Proyector
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(15.75f, 8.5f, 1.0f));
+		model = glm::scale(model, glm::vec3(10.0f, 5.7f, 3.15f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		proyector.Draw(lightingShader);
 		glBindVertexArray(0);
 
 		model = glm::mat4(1);

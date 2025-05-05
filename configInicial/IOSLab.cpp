@@ -161,7 +161,8 @@ int main()
 	Model Mesapequena((char*)"Models/mesapequena.obj");
 	Model Pantalla((char*)"Models/pantalla.obj");
 	Model Escritorio2((char*)"Models/escritorio2.obj");
-
+	Model pizarron((char*)"Models/pizarron.obj");
+	Model aireAcondicionado((char*)"Models/aireAcondicionado.obj");
 
 
 	// First, set the container's VAO (and VBO)
@@ -334,6 +335,23 @@ int main()
 		model = glm::scale(model, glm::vec3(2.0f, 2.0f, 2.0f));
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		Pantalla.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		//pizarra
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-15.75f, 4.0f, 10.0f));
+		model = glm::scale(model, glm::vec3(8.0f, 16.0f, 2.0f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		pizarron.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		//Aire acondicionado
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-25.75f, 8.5f, 11.0f));
+		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.3f, 0.7f, 0.15f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		aireAcondicionado.Draw(lightingShader);
 		glBindVertexArray(0);
 
 		model = glm::mat4(1);

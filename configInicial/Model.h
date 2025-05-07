@@ -27,7 +27,7 @@ class Model
 public:
 	/*  Functions   */
 	// Constructor, expects a filepath to a 3D model.
-	Model(GLchar *path)
+	Model(const char* path)
 	{
 		this->loadModel(path);
 	}
@@ -218,6 +218,12 @@ GLint TextureFromFile(const char *path, string directory)
 	int width, height;
 
 	unsigned char *image = SOIL_load_image(filename.c_str(), &width, &height, 0, SOIL_LOAD_RGB);
+	if (image == nullptr) {
+		std::cerr << "ERROR::TEXTURE_LOADING::FAILED_TO_LOAD_TEXTURE: " << filename << std::endl;
+		std::cerr << "SOIL Error: " << SOIL_last_result() << std::endl;
+		glDeleteTextures(1, &textureID); // Limpia
+		return 0; // O un ID de textura de error especial si tienes uno
+	}
 
 	// Assign texture to ID
 	glBindTexture(GL_TEXTURE_2D, textureID);

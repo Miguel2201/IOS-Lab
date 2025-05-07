@@ -56,49 +56,57 @@ public:
 		this->setupMesh();
 	}
 
-	// Render the mesh
+	// En Mesh::Draw(Shader shader)
 	void Draw(Shader shader)
 	{
-		// Bind appropriate textures
-		GLuint diffuseNr = 1;
-		GLuint specularNr = 1;
+		GLuint diffuseUnit = 0;    // Unidad de textura para difusa
+		GLuint specularUnit = 1;   // Unidad de textura para especular
+		bool diffuseTextureBound = false;
+		bool specularTextureBound = false;
 
 		for (GLuint i = 0; i < this->textures.size(); i++)
 		{
-			glActiveTexture(GL_TEXTURE0 + i); // Active proper texture unit before binding
-											  // Retrieve texture number (the N in diffuse_textureN)
-			stringstream ss;
-			string number;
-			string name = this->textures[i].type;
+			string type = this->textures[i].type; // "texture_diffuse" o "texture_specular"
 
-			if (name == "texture_diffuse")
+			if (type == "texture_diffuse" && !diffuseTextureBound)
 			{
-				ss << diffuseNr++; // Transfer GLuint to stream
+				glActiveTexture(GL_TEXTURE0 + diffuseUnit);
+				glBindTexture(GL_TEXTURE_2D, this->textures[i].id);
+				// El uniform "material.diffuse" ya está configurado para usar la unidad 'diffuseUnit' (0)
+				// desde IOSLab.cpp, así que no necesitas hacer glUniform1i aquí de nuevo para el sampler.
+				diffuseTextureBound = true;
 			}
-			else if (name == "texture_specular")
+			else if (type == "texture_specular" && !specularTextureBound)
 			{
-				ss << specularNr++; // Transfer GLuint to stream
+				glActiveTexture(GL_TEXTURE0 + specularUnit);
+				glBindTexture(GL_TEXTURE_2D, this->textures[i].id);
+				// El uniform "material.specular" ya está configurado para usar la unidad 'specularUnit' (1)
+				// desde IOSLab.cpp.
+				specularTextureBound = true;
 			}
-
-			number = ss.str();
-			// Now set the sampler to the correct texture unit
-			glUniform1i(glGetUniformLocation(shader.Program, (name + number).c_str()), i);
-			// And finally bind the texture
-			glBindTexture(GL_TEXTURE_2D, this->textures[i].id);
+			// Si tienes más de una textura difusa o especular por malla,
+			// este código simple solo usará la primera de cada tipo.
+			// Si necesitas múltiples, el shader tendría que cambiar (ej. array de samplers o más samplers).
 		}
 
-		// Also set each mesh's shininess property to a default value (if you want you could extend this to another mesh property and possibly change this value)
-		glUniform1f(glGetUniformLocation(shader.Program, "material.shininess"), 16.0f);
+		// Si alguna textura no se encontró/enlazó, puedes enlazar una textura por defecto (opcional)
+		// o asegurarte de que tus modelos siempre tengan al menos una textura difusa.
+		// Por ejemplo, si no hay textura difusa, podrías enlazar una textura blanca 1x1.
+
+		glUniform1f(glGetUniformLocation(shader.Program, "material.shininess"), 16.0f); // Esto está bien
 
 		// Draw mesh
 		glBindVertexArray(this->VAO);
 		glDrawElements(GL_TRIANGLES, this->indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 
-		// Always good practice to set everything back to defaults once configured.
-		for (GLuint i = 0; i < this->textures.size(); i++)
-		{
-			glActiveTexture(GL_TEXTURE0 + i);
+		// Desvincular texturas (buena práctica)
+		if (diffuseTextureBound) {
+			glActiveTexture(GL_TEXTURE0 + diffuseUnit);
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+		if (specularTextureBound) {
+			glActiveTexture(GL_TEXTURE0 + specularUnit);
 			glBindTexture(GL_TEXTURE_2D, 0);
 		}
 	}

@@ -116,7 +116,7 @@ int main()
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);*/
 
 	// Create a GLFWwindow object that we can use for GLFW's functions
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Fuentes de luz", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "IOS Lab", nullptr, nullptr);
 
 	if (nullptr == window)
 	{
@@ -157,11 +157,18 @@ int main()
 	//Carga de modelos
 	Model Laboratorio((char*)"Models/laboratorio.obj");
 	Model Escritorio((char*)"Models/escritorio.obj");
-	Model LogoIOS((char*)"Models/logoIOS.obj");
+	Model LogoIOS((char*)"Models/logoIOS2.obj");
 	Model Mesapequena((char*)"Models/mesapequena.obj");
 	Model Pantalla((char*)"Models/pantalla.obj");
 	Model Escritorio2((char*)"Models/escritorio2.obj");
 	Model Silla((char*)"Models/silla.obj");
+	Model Aire((char*)"Models/aire.obj");
+	Model LogoUNAM((char*)"Models/logoUNAM.obj");
+	Model Proyector((char*)"Models/proye.obj");
+	Model Pizarron((char*)"Models/pizarra.obj");
+	Model SillonNaranja((char*)"Models/sillonNaranja.obj");
+	Model SillonGris((char*)"Models/sillonGris.obj");
+	Model Escritorio3((char*)"Models/escritorio3.obj");
 
 
 
@@ -181,7 +188,7 @@ int main()
 
 	// Set texture units
 	lightingShader.Use();
-	glUniform1i(glGetUniformLocation(lightingShader.Program, "Material.difuse"), 0);
+	glUniform1i(glGetUniformLocation(lightingShader.Program, "Material.diffuse"), 0);
 	glUniform1i(glGetUniformLocation(lightingShader.Program, "Material.specular"), 1);
 
 	glm::mat4 projection = glm::perspective(camera.GetZoom(), (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 0.1f, 100.0f);
@@ -214,7 +221,7 @@ int main()
 		// Use cooresponding shader when setting uniforms/drawing objects
 		lightingShader.Use();
 
-		glUniform1i(glGetUniformLocation(lightingShader.Program, "diffuse"), 0);
+		//glUniform1i(glGetUniformLocation(lightingShader.Program, "diffuse"), 0);
 		//glUniform1i(glGetUniformLocation(lightingShader.Program, "specular"),1);
 
 		GLint viewPosLoc = glGetUniformLocation(lightingShader.Program, "viewPos");
@@ -319,6 +326,24 @@ int main()
 		Laboratorio.Draw(lightingShader);
 		glBindVertexArray(0);
 
+		//Aire
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-25.75f, 9.0f, 11.0f));
+		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.25f, 0.25f, 0.25f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Aire.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		//Proyector
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-15.75f, 8.65f, 11.0f));
+		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(0.05f, 0.05f, 0.05f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Proyector.Draw(lightingShader);
+		glBindVertexArray(0);
+
 		//LogoIOS
 		model = glm::mat4(1);
 		model = glm::translate(model, glm::vec3(-25.75f, 5.5f, 11.0f));
@@ -343,6 +368,15 @@ int main()
 		model = glm::scale(model, glm::vec3(2.0f, 2.0f, 2.0f));
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		Pantalla.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		//LogoUNAM
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-1.0f, 6.2f, 23.8f));
+		//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(1.3f, 1.3f, 1.3f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		LogoUNAM.Draw(lightingShader);
 		glBindVertexArray(0);
 
 		//Escritorio
@@ -435,6 +469,15 @@ int main()
 		Escritorio2.Draw(lightingShader);
 		glBindVertexArray(0);
 
+		//Escritorio3
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-22.0f, 0.25f, 22.0f));
+		//model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+		model = glm::scale(model, glm::vec3(1.06f, 1.10f, 1.06f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Escritorio3.Draw(lightingShader);
+		glBindVertexArray(0);
+
 		//Mesapequena
 		model = glm::mat4(1);
 		model = glm::translate(model, glm::vec3(5.75f, 0.18f, 22.0f));
@@ -442,6 +485,49 @@ int main()
 		model = glm::scale(model, glm::vec3(2.5f, 2.7f, 2.5f));
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		Mesapequena.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		//SillonNaranja
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(6.0f, 0.18f, 22.5f));
+		//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+		model = glm::scale(model, glm::vec3(2.6f, 2.8f, 2.6f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		SillonNaranja.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(3.5f, 0.18f, 22.5f));
+		//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+		model = glm::scale(model, glm::vec3(2.6f, 2.8f, 2.6f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		SillonNaranja.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		//SillonGris
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(7.5f, 0.18f, 22.5f));
+		//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+		model = glm::scale(model, glm::vec3(2.6f, 2.8f, 2.6f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		SillonGris.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		//Pizarron
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-10.75f, 2.46f, 23.0f));
+		//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+		model = glm::scale(model, glm::vec3(2.2f, 1.8f, 2.0f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Pizarron.Draw(lightingShader);
+		glBindVertexArray(0);
+
+		model = glm::mat4(1);
+		model = glm::translate(model, glm::vec3(-18.75f, 2.46f, 23.0f));
+		//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+		model = glm::scale(model, glm::vec3(2.2f, 1.8f, 2.0f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Pizarron.Draw(lightingShader);
 		glBindVertexArray(0);
 
 		//Silla-Escritorio

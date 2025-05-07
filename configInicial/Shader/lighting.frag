@@ -83,9 +83,9 @@ void main( )
     // Spot light
     result += CalcSpotLight( spotLight, norm, FragPos, viewDir );
  	
-    color = vec4( result,texture(material.diffuse, TexCoords).rgb );
-	  if(color.a < 0.1 && transparency==1)
-        discard;
+    vec4 diffuseTexSample = texture(material.diffuse, TexCoords);
+    color = vec4(result, diffuseTexSample.a);
+
 
 }
 

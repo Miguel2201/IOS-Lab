@@ -9,143 +9,149 @@
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
+// Assimp includes no son necesarios aquí si Model.h los maneja
+// #include <assimp/Importer.hpp>
+// #include <assimp/scene.h>
+// #include <assimp/postprocess.h>
 
+#include "Shader.h" // Asegúrate que Shader.h está bien
 
-
-#include "Shader.h"
-
-using namespace std;
-
+// Definiciones de Vertex y Texture (si no están ya en un archivo global de utilidades)
 struct Vertex
 {
-	// Position
-	glm::vec3 Position;
-	// Normal
-	glm::vec3 Normal;
-	// TexCoords
-	glm::vec2 TexCoords;
+    glm::vec3 Position;
+    glm::vec3 Normal;
+    glm::vec2 TexCoords;
 };
 
 struct Texture
 {
-	GLuint id;
-	string type;
-	aiString path;
+    GLuint id;
+    std::string type; // "texture_diffuse", "texture_specular", "texture_normal"
+    aiString path;  // Para la optimización de no cargar duplicados (aiString viene de assimp/material.h)
+    // Si quieres evitar la dependencia de Assimp aquí, podrías cambiar path a std::string
 };
 
 class Mesh
 {
 public:
-	/*  Mesh Data  */
-	vector<Vertex> vertices;
-	vector<GLuint> indices;
-	vector<Texture> textures;
+    std::vector<Vertex> vertices;
+    std::vector<GLuint> indices;
+    std::vector<Texture> textures;
+    GLuint VAO; // Hacerlo público para debug, o mantener privado
 
-	/*  Functions  */
-	// Constructor
-	Mesh(vector<Vertex> vertices, vector<GLuint> indices, vector<Texture> textures)
-	{
-		this->vertices = vertices;
-		this->indices = indices;
-		this->textures = textures;
+    Mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices, const std::vector<Texture>& textures)
+    {
+        this->vertices = vertices;
+        this->indices = indices;
+        this->textures = textures;
+        this->setupMesh();
+    }
 
-		// Now that we have all the required data, set the vertex buffers and its attribute pointers.
-		this->setupMesh();
-	}
+    void Draw(Shader& shader) // Pasar Shader por referencia
+    {
+        // Unidades de textura fijas para difusa y especular
+        // Los samplers en el shader (material.diffuse, material.specular) ya están
+        // configurados para usar estas unidades desde IOSLab.cpp
+        const GLuint diffuseUnit = 0;
+        const GLuint specularUnit = 1;
+        // const GLuint normalUnit = 2; // Si usaras mapas normales
 
-	// En Mesh::Draw(Shader shader)
-	void Draw(Shader shader)
-	{
-		GLuint diffuseUnit = 0;    // Unidad de textura para difusa
-		GLuint specularUnit = 1;   // Unidad de textura para especular
-		bool diffuseTextureBound = false;
-		bool specularTextureBound = false;
+        unsigned int diffuseNr = 0;  // Para contar cuántas texturas difusas hemos enlazado
+        unsigned int specularNr = 0; // Para contar cuántas texturas especulares hemos enlazado
+        // unsigned int normalNr = 0;
 
-		for (GLuint i = 0; i < this->textures.size(); i++)
-		{
-			string type = this->textures[i].type; // "texture_diffuse" o "texture_specular"
+        for (GLuint i = 0; i < this->textures.size(); i++)
+        {
+            // Asumimos que el shader está activo (shader.Use() se llama antes de Model::Draw)
+            if (this->textures[i].id == 0) continue; // Saltar texturas que no se cargaron
 
-			if (type == "texture_diffuse" && !diffuseTextureBound)
-			{
-				glActiveTexture(GL_TEXTURE0 + diffuseUnit);
-				glBindTexture(GL_TEXTURE_2D, this->textures[i].id);
-				// El uniform "material.diffuse" ya está configurado para usar la unidad 'diffuseUnit' (0)
-				// desde IOSLab.cpp, así que no necesitas hacer glUniform1i aquí de nuevo para el sampler.
-				diffuseTextureBound = true;
-			}
-			else if (type == "texture_specular" && !specularTextureBound)
-			{
-				glActiveTexture(GL_TEXTURE0 + specularUnit);
-				glBindTexture(GL_TEXTURE_2D, this->textures[i].id);
-				// El uniform "material.specular" ya está configurado para usar la unidad 'specularUnit' (1)
-				// desde IOSLab.cpp.
-				specularTextureBound = true;
-			}
-			// Si tienes más de una textura difusa o especular por malla,
-			// este código simple solo usará la primera de cada tipo.
-			// Si necesitas múltiples, el shader tendría que cambiar (ej. array de samplers o más samplers).
-		}
+            if (this->textures[i].type == "texture_diffuse")
+            {
+                if (diffuseNr == 0) // Solo enlazar la primera textura difusa a la unidad 0
+                {
+                    glActiveTexture(GL_TEXTURE0 + diffuseUnit);
+                    glBindTexture(GL_TEXTURE_2D, this->textures[i].id);
+                }
+                diffuseNr++;
+            }
+            else if (this->textures[i].type == "texture_specular")
+            {
+                if (specularNr == 0) // Solo enlazar la primera textura especular a la unidad 1
+                {
+                    glActiveTexture(GL_TEXTURE0 + specularUnit);
+                    glBindTexture(GL_TEXTURE_2D, this->textures[i].id);
+                }
+                specularNr++;
+            }
+            // else if (this->textures[i].type == "texture_normal")
+            // {
+            //     if (normalNr == 0) // Solo enlazar la primera textura normal a la unidad 2
+            //     {
+            //         glActiveTexture(GL_TEXTURE0 + normalUnit);
+            //         glBindTexture(GL_TEXTURE_2D, this->textures[i].id);
+            //     }
+            //     normalNr++;
+            // }
+        }
 
-		// Si alguna textura no se encontró/enlazó, puedes enlazar una textura por defecto (opcional)
-		// o asegurarte de que tus modelos siempre tengan al menos una textura difusa.
-		// Por ejemplo, si no hay textura difusa, podrías enlazar una textura blanca 1x1.
+        // El uniform material.shininess se establece aquí
+        // Si tienes otros uniforms de material por malla, configúralos aquí.
+        // shader.setFloat("material.shininess", 16.0f); // Usando un método de Shader si lo tienes
+        glUniform1f(glGetUniformLocation(shader.Program, "material.shininess"), 32.0f); // Valor de ejemplo, ajusta según necesites
 
-		glUniform1f(glGetUniformLocation(shader.Program, "material.shininess"), 16.0f); // Esto está bien
 
-		// Draw mesh
-		glBindVertexArray(this->VAO);
-		glDrawElements(GL_TRIANGLES, this->indices.size(), GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
+        // Draw mesh
+        glBindVertexArray(this->VAO);
+        glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(this->indices.size()), GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
 
-		// Desvincular texturas (buena práctica)
-		if (diffuseTextureBound) {
-			glActiveTexture(GL_TEXTURE0 + diffuseUnit);
-			glBindTexture(GL_TEXTURE_2D, 0);
-		}
-		if (specularTextureBound) {
-			glActiveTexture(GL_TEXTURE0 + specularUnit);
-			glBindTexture(GL_TEXTURE_2D, 0);
-		}
-	}
+        // Siempre es buena práctica desvincular las texturas después de usarlas,
+        // aunque si el siguiente objeto las va a sobreescribir, no es estrictamente necesario.
+        if (diffuseNr > 0) {
+            glActiveTexture(GL_TEXTURE0 + diffuseUnit);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+        if (specularNr > 0) {
+            glActiveTexture(GL_TEXTURE0 + specularUnit);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+        // if (normalNr > 0) {
+        //     glActiveTexture(GL_TEXTURE0 + normalUnit);
+        //     glBindTexture(GL_TEXTURE_2D, 0);
+        // }
+    }
+
 
 private:
-	/*  Render data  */
-	GLuint VAO, VBO, EBO;
+    // GLuint VAO, VBO, EBO; // Movido a público para debug o mantener privado
+    GLuint VBO, EBO;
 
-	/*  Functions    */
-	// Initializes all the buffer objects/arrays
-	void setupMesh()
-	{
-		// Create buffers/arrays
-		glGenVertexArrays(1, &this->VAO);
-		glGenBuffers(1, &this->VBO);
-		glGenBuffers(1, &this->EBO);
 
-		glBindVertexArray(this->VAO);
-		// Load data into vertex buffers
-		glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
-		// A great thing about structs is that their memory layout is sequential for all its items.
-		// The effect is that we can simply pass a pointer to the struct and it translates perfectly to a glm::vec3/2 array which
-		// again translates to 3/2 floats which translates to a byte array.
-		glBufferData(GL_ARRAY_BUFFER, this->vertices.size() * sizeof(Vertex), &this->vertices[0], GL_STATIC_DRAW);
+    void setupMesh()
+    {
+        glGenVertexArrays(1, &this->VAO);
+        glGenBuffers(1, &this->VBO);
+        glGenBuffers(1, &this->EBO);
 
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->EBO);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->indices.size() * sizeof(GLuint), &this->indices[0], GL_STATIC_DRAW);
+        glBindVertexArray(this->VAO);
 
-		// Set the vertex attribute pointers
-		// Vertex Positions
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid *)0);
-		// Vertex Normals
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid *)offsetof(Vertex, Normal));
-		// Vertex Texture Coords
-		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid *)offsetof(Vertex, TexCoords));
+        glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
+        glBufferData(GL_ARRAY_BUFFER, this->vertices.size() * sizeof(Vertex), &this->vertices[0], GL_STATIC_DRAW);
 
-		glBindVertexArray(0);
-	}
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->indices.size() * sizeof(GLuint), &this->indices[0], GL_STATIC_DRAW);
+
+        // Vertex Positions
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0);
+        // Vertex Normals
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, Normal));
+        // Vertex Texture Coords
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, TexCoords));
+
+        glBindVertexArray(0);
+    }
 };

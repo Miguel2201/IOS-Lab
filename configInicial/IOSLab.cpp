@@ -1,24 +1,16 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
-#include <string> // Para std::to_string
-#include <map>    // Para asociar modelos con sus escalas animadas
+#include <string>
+#include <map>
 
-// GLEW
+
 #include <GL/glew.h>
-
-// GLFW
 #include <GLFW/glfw3.h>
-
-// GLM Mathematics
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-//Load Models
-// #include "SOIL2/SOIL2.h" // Si está en Model.h
-
-// Other includes
 #include "Shader.h"
 #include "Camera.h"
 #include "Model.h"
@@ -38,17 +30,13 @@ GLfloat lastX = WIDTH / 2.0;
 GLfloat lastY = HEIGHT / 2.0;
 bool keys[1024];
 bool firstMouse = true;
-bool active; // Para la luz parpadeante (Light1_Color_Factors)
+bool active; // Para la luz parpadeante
 
-// Positions of the point lights 
+// Point Lights
 glm::vec3 pointLightPositions[] = {
-    glm::vec3(-22.75f, 9.25f, 11.0f),
-    glm::vec3(-18.75f, 9.25f, 11.0f),
-    glm::vec3(-14.75f, 9.25f, 11.0f),
-    glm::vec3(-8.75f, 9.25f, 11.0f)
+    glm::vec3(-22.75f, 9.25f, 11.0f), glm::vec3(-18.75f, 9.25f, 11.0f),
+    glm::vec3(-14.75f, 9.25f, 11.0f), glm::vec3(-8.75f, 9.25f, 11.0f)
 };
-
-// Vértices para el cubo de luz (lámparas)
 float lampVertices[] = { 
     -0.5f, -0.5f, -0.5f,  0.5f, -0.5f, -0.5f,  0.5f,  0.5f, -0.5f,  0.5f,  0.5f, -0.5f, -0.5f,  0.5f, -0.5f, -0.5f, -0.5f, -0.5f,
     -0.5f, -0.5f,  0.5f,  0.5f, -0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  0.5f, -0.5f,  0.5f,  0.5f, -0.5f, -0.5f,  0.5f,
@@ -57,181 +45,232 @@ float lampVertices[] = {
     -0.5f, -0.5f, -0.5f,  0.5f, -0.5f, -0.5f,  0.5f, -0.5f,  0.5f,  0.5f, -0.5f,  0.5f, -0.5f, -0.5f,  0.5f, -0.5f, -0.5f, -0.5f,
     -0.5f,  0.5f, -0.5f,  0.5f,  0.5f, -0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  0.5f, -0.5f,  0.5f,  0.5f, -0.5f,  0.5f, -0.5f,
 };
-
-
-glm::vec3 Light1_Color_Factors = glm::vec3(0); // Para controlar el parpadeo de la luz 0
+glm::vec3 Light1_Color_Factors = glm::vec3(0);
 
 // Deltatime
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 
-// --- Variables para la Animación de Desaparición ---
+// --- Variables para Animación de Desaparición (Escena Antigua) ---
 bool startDisappearAnimation = false;
-bool modelsVanished = false;
+bool oldModelsVanished = false; // Renombrado para claridad
 const float disappearSpeed = 0.7f;
-std::vector<Model*> animatableModels; // Vector para los modelos que desaparecen
-std::vector<float> modelScales;       // Escalas para los modelos en animatableModels
-std::map<Model*, glm::mat4> originalModelTransforms; // Sus transformaciones originales
-std::map<Model*, size_t> modelToIndexMap;          // Para encontrar su índice en modelScales
+std::vector<Model*> animatableOldModels; // Modelos que desaparecen
+std::vector<float> oldModelScales;
+std::map<Model*, glm::mat4> originalOldModelTransforms;
+std::map<Model*, size_t> oldModelToIndexMap;
 Model* Laboratorio_permanente = nullptr;
-Model* PantallaNueva = nullptr; // Pantalla nueva que no se anima
-// ----------------------------------------------------
+
+// ---------------------------------------------------------------
+// --- Variables para Animación de Aparición (Escena Nueva) ---
+enum class AppearPhase { IDLE, GROWING, MOVING, FINISHED };
+bool startAppearAnimationGlobal = false;
+int appearingModelIndex = -1;
+
+// Definir un punto de aparición FIJO, fuera del laboratorio, cerca de la pos inicial de la cámara
+const glm::vec3 FIXED_SPAWN_POINT = glm::vec3(25.0f, 2.0f, 6.5f); // AJUSTA ESTAS COORDENADAS
+
+
+struct NewModelAnimated {
+    Model* modelPtr = nullptr;
+    glm::mat4 targetTransform = glm::mat4(1.0f);
+    glm::vec3 finalModelScale = glm::vec3(1.0f);
+
+    glm::vec3 spawnPosition = FIXED_SPAWN_POINT; // Usará el punto fijo
+    glm::quat spawnOrientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+
+    glm::vec3 currentPosition = glm::vec3(0.0f);
+    float currentScaleFactor = 0.0f;
+    float movementProgress = 0.0f;
+    AppearPhase phase = AppearPhase::IDLE;
+    bool isLoaded = false;
+    std::string path;
+
+    NewModelAnimated(const std::string& p, const glm::mat4& target, const glm::vec3& finalScaleVec)
+        : path(p), targetTransform(target), finalModelScale(finalScaleVec) {
+        // spawnPosition se establece a FIXED_SPAWN_POINT por defecto
+    }
+
+    void Load() {
+        if (!isLoaded && !path.empty()) {
+            modelPtr = new Model((char*)path.c_str());
+            isLoaded = true;
+            std::cout << "Cargado nuevo modelo: " << path << std::endl;
+        }
+    }
+
+    // Inicia la animación para este modelo
+    void StartAnimation() { 
+        if (!isLoaded) Load();
+        if (!modelPtr) return;
+
+        // La orientación inicial puede ser la orientación final del modelo
+        spawnOrientation = glm::normalize(glm::quat_cast(targetTransform));
+
+        currentPosition = spawnPosition; // Ya está establecido a FIXED_SPAWN_POINT
+        currentScaleFactor = 0.0f;
+        movementProgress = 0.0f;
+        phase = AppearPhase::GROWING;
+        std::cout << "Iniciando aparición de: " << path << " en ("
+            << spawnPosition.x << ", " << spawnPosition.y << ", " << spawnPosition.z << ")" << std::endl;
+    }
+};
+std::vector<NewModelAnimated> newSceneModels;
+const float growSpeed = 0.6f;    // Un poco más lento para ver mejor
+const float newModelMoveDuration = 2.5f; // Un poco más de tiempo para moverse
+// -------------------------------------------------------------
+
+Model* PantallaNueva_Test = nullptr; 
 
 int main()
 {
-	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "IOS Lab", nullptr, nullptr);
-	if (window == nullptr) { std::cerr << "Failed to create GLFW window" << std::endl; glfwTerminate(); return EXIT_FAILURE; }
-	glfwMakeContextCurrent(window);
-	glfwGetFramebufferSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
-	glfwSetKeyCallback(window, KeyCallback);
-	glfwSetCursorPosCallback(window, MouseCallback);
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "IOS Lab", nullptr, nullptr);
+    if (window == nullptr) { std::cerr << "Failed to create GLFW window" << std::endl; glfwTerminate(); return EXIT_FAILURE; }
+    glfwMakeContextCurrent(window);
+    glfwGetFramebufferSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
+    glfwSetKeyCallback(window, KeyCallback);
+    glfwSetCursorPosCallback(window, MouseCallback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-	glewExperimental = GL_TRUE;
-	if (glewInit() != GLEW_OK) { std::cerr << "Failed to initialize GLEW" << std::endl; return EXIT_FAILURE; }
+    glewExperimental = GL_TRUE;
+    if (glewInit() != GLEW_OK) { std::cerr << "Failed to initialize GLEW" << std::endl; return EXIT_FAILURE; }
 
-	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-	glEnable(GL_DEPTH_TEST);
+    glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    glEnable(GL_DEPTH_TEST);
 
 
-	Shader lightingShader("Shader/lighting.vs", "Shader/lighting.frag");
-	Shader lampShader("Shader/lamp.vs", "Shader/lamp.frag");
+    Shader lightingShader("Shader/lighting.vs", "Shader/lighting.frag");
+    Shader lampShader("Shader/lamp.vs", "Shader/lamp.frag");
 
     lightingShader.Use();
     glUniform1i(glGetUniformLocation(lightingShader.Program, "material.diffuse"), 0);
     glUniform1i(glGetUniformLocation(lightingShader.Program, "material.specular"), 1);
 
-
-	// --- Carga de Modelos ---
-    size_t currentIndexAnimatable = 0;
-
-    // 1. Laboratorio (NO se anima, NO se añade a animatableModels)
+    // --- Carga de Modelos INICIALES (que desaparecerán) ---
+    size_t currentIndexOldAnimatable = 0;
     Laboratorio_permanente = new Model((char*)"Models/laboratorio.obj");
-	PantallaNueva = new Model((char*)"Models/pantallaNueva.obj");
 
-    // 2. Modelos que SÍ se animan y desaparecen
     Model* pAire = new Model((char*)"Models/aire.obj");
-    animatableModels.push_back(pAire);
-    glm::mat4 transformAire = glm::translate(glm::mat4(1.0f), glm::vec3(-25.75f, 9.0f, 11.0f)) *
-                             glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
-                             glm::scale(glm::mat4(1.0f), glm::vec3(0.25f, 0.25f, 0.25f));
-    originalModelTransforms[pAire] = transformAire;
-    modelToIndexMap[pAire] = currentIndexAnimatable++;
-
+    animatableOldModels.push_back(pAire);
+    originalOldModelTransforms[pAire] = glm::translate(glm::mat4(1.0f), glm::vec3(-25.75f, 9.0f, 11.0f)) *
+        glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
+        glm::scale(glm::mat4(1.0f), glm::vec3(0.25f, 0.25f, 0.25f));
+    oldModelToIndexMap[pAire] = currentIndexOldAnimatable++;
+    
     Model* pLogoIOS = new Model((char*)"Models/logoIOS2.obj");
-    animatableModels.push_back(pLogoIOS);
-    glm::mat4 transformLogoIOS = glm::translate(glm::mat4(1.0f), glm::vec3(-25.75f, 5.5f, 11.0f)) *
-                                glm::rotate(glm::mat4(1.0f), glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
-                                glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.5f, 1.0f));
-    originalModelTransforms[pLogoIOS] = transformLogoIOS;
-    modelToIndexMap[pLogoIOS] = currentIndexAnimatable++;
+    animatableOldModels.push_back(pLogoIOS);
+    originalOldModelTransforms[pLogoIOS] = glm::translate(glm::mat4(1.0f), glm::vec3(-25.75f, 5.5f, 11.0f)) *
+        glm::rotate(glm::mat4(1.0f), glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
+        glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.5f, 1.0f));
+    oldModelToIndexMap[pLogoIOS] = currentIndexOldAnimatable++;
 
-   
-    // --- Para la PRIMERA PANTALLA ---
-    Model* pPantalla1_visual = new Model((char*)"Models/pantalla.obj"); // Cargar el modelo
-    animatableModels.push_back(pPantalla1_visual); // Añadir a la lista de animación
-    glm::mat4 transformPantalla1 = glm::translate(glm::mat4(1.0f), glm::vec3(-25.75f, 4.0f, 6.0f)) *
-                                  glm::rotate(glm::mat4(1.0f), glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
-                                  glm::scale(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 2.0f));
-    originalModelTransforms[pPantalla1_visual] = transformPantalla1;
-    modelToIndexMap[pPantalla1_visual] = currentIndexAnimatable++;
+    Model* pPantalla1_visual = new Model((char*)"Models/pantalla.obj");
+    animatableOldModels.push_back(pPantalla1_visual);
+    originalOldModelTransforms[pPantalla1_visual] = glm::translate(glm::mat4(1.0f), glm::vec3(-25.75f, 4.0f, 6.0f)) *
+        glm::rotate(glm::mat4(1.0f), glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
+        glm::scale(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 2.0f));
+    oldModelToIndexMap[pPantalla1_visual] = currentIndexOldAnimatable++;
 
-    // Carga el resto de tus modelos que quieres que desaparezcan:
     Model* pSilla = new Model((char*)"Models/silla.obj");
-    animatableModels.push_back(pSilla);
-    glm::mat4 transformSilla = glm::translate(glm::mat4(1.0f), glm::vec3(-22.9f, 0.17f, 2.0f)) *
-                              glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
-    originalModelTransforms[pSilla] = transformSilla; // Primera silla
-    modelToIndexMap[pSilla] = currentIndexAnimatable++;
+    animatableOldModels.push_back(pSilla);
+    originalOldModelTransforms[pSilla] = glm::translate(glm::mat4(1.0f), glm::vec3(-22.9f, 0.17f, 2.0f)) *
+        glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
+    oldModelToIndexMap[pSilla] = currentIndexOldAnimatable++;
 
     Model* pProyector = new Model((char*)"Models/proye.obj");
-    animatableModels.push_back(pProyector);
+    animatableOldModels.push_back(pProyector);
     glm::mat4 transformProyector = glm::translate(glm::mat4(1.0f), glm::vec3(-15.75f, 8.65f, 11.0f)) *
         glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f)) *
         glm::scale(glm::mat4(1.0f), glm::vec3(0.05f, 0.05f, 0.05f));
-    originalModelTransforms[pProyector] = transformProyector;
-    modelToIndexMap[pProyector] = currentIndexAnimatable++;
+    originalOldModelTransforms[pProyector] = transformProyector;
+    oldModelToIndexMap[pProyector] = currentIndexOldAnimatable++;
 
     Model* pEscritorio = new Model((char*)"Models/escritorio.obj");
-    animatableModels.push_back(pEscritorio);
+    animatableOldModels.push_back(pEscritorio);
     glm::mat4 transformEscritorio = glm::translate(glm::mat4(1.0f), glm::vec3(-20.25f, 3.1f, 1.5f)) *
         glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
         glm::scale(glm::mat4(1.0f), glm::vec3(1.25f, 1.1f, 1.2f));
-    originalModelTransforms[pEscritorio] = transformEscritorio;
-    modelToIndexMap[pEscritorio] = currentIndexAnimatable++;
+    originalOldModelTransforms[pEscritorio] = transformEscritorio;
+    oldModelToIndexMap[pEscritorio] = currentIndexOldAnimatable++;
 
     Model* pEscritorio2 = new Model((char*)"Models/escritorio2.obj");
-    animatableModels.push_back(pEscritorio2);
+    animatableOldModels.push_back(pEscritorio2);
     glm::mat4 transformEscritorio2 = glm::translate(glm::mat4(1.0f), glm::vec3(-22.0f, 0.25f, 15.0f)) *
         glm::scale(glm::mat4(1.0f), glm::vec3(0.06f, 0.10f, 0.06));
-    originalModelTransforms[pEscritorio2] = transformEscritorio2;
-    modelToIndexMap[pEscritorio2] = currentIndexAnimatable++;
+    originalOldModelTransforms[pEscritorio2] = transformEscritorio2;
+    oldModelToIndexMap[pEscritorio2] = currentIndexOldAnimatable++;
 
     Model* pEscritorio3 = new Model((char*)"Models/escritorio3.obj");
-    animatableModels.push_back(pEscritorio3);
+    animatableOldModels.push_back(pEscritorio3);
     glm::mat4 transformEscritorio3 = glm::translate(glm::mat4(1.0f), glm::vec3(-22.0f, 0.25f, 23.2f)) *
         glm::rotate(glm::mat4(1.0f), glm::radians(85.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
         glm::scale(glm::mat4(1.0f), glm::vec3(4.8f, 4.8f, 4.8f));
-    originalModelTransforms[pEscritorio3] = transformEscritorio3;
-    modelToIndexMap[pEscritorio3] = currentIndexAnimatable++;
+    originalOldModelTransforms[pEscritorio3] = transformEscritorio3;
+    oldModelToIndexMap[pEscritorio3] = currentIndexOldAnimatable++;
 
     Model* pMesapequena = new Model((char*)"Models/mesapequena.obj");
-    animatableModels.push_back(pMesapequena);
+    animatableOldModels.push_back(pMesapequena);
     glm::mat4 transformMesapequena = glm::translate(glm::mat4(1.0f), glm::vec3(5.75f, 0.18f, 22.0f)) *
         glm::scale(glm::mat4(1.0f), glm::vec3(2.5f, 2.7f, 2.5f));
-    originalModelTransforms[pMesapequena] = transformMesapequena;
-    modelToIndexMap[pMesapequena] = currentIndexAnimatable++;
+    originalOldModelTransforms[pMesapequena] = transformMesapequena;
+    oldModelToIndexMap[pMesapequena] = currentIndexOldAnimatable++;
 
     Model* pSillonNaranja = new Model((char*)"Models/sillonNaranja.obj");
-    animatableModels.push_back(pSillonNaranja);
+    animatableOldModels.push_back(pSillonNaranja);
     glm::mat4 transformSillonNaranja = glm::translate(glm::mat4(1.0f), glm::vec3(6.0f, 0.18f, 22.5f)) *
         glm::scale(glm::mat4(1.0f), glm::vec3(2.6f, 2.8f, 2.6f));
-    originalModelTransforms[pSillonNaranja] = transformSillonNaranja;
-    modelToIndexMap[pSillonNaranja] = currentIndexAnimatable++;
+    originalOldModelTransforms[pSillonNaranja] = transformSillonNaranja;
+    oldModelToIndexMap[pSillonNaranja] = currentIndexOldAnimatable++;
 
     Model* pSillonGris = new Model((char*)"Models/sillonGris.obj");
-    animatableModels.push_back(pSillonGris);
+    animatableOldModels.push_back(pSillonGris);
     glm::mat4 transformSillonGris = glm::translate(glm::mat4(1.0f), glm::vec3(7.5f, 0.18f, 22.5f)) *
         glm::scale(glm::mat4(1.0f), glm::vec3(2.6f, 2.8f, 2.6f));
-    originalModelTransforms[pSillonGris] = transformSillonGris;
-    modelToIndexMap[pSillonGris] = currentIndexAnimatable++;
+    originalOldModelTransforms[pSillonGris] = transformSillonGris;
+    oldModelToIndexMap[pSillonGris] = currentIndexOldAnimatable++;
 
     Model* pPizarron = new Model((char*)"Models/pizarra.obj");
-    animatableModels.push_back(pPizarron);
+    animatableOldModels.push_back(pPizarron);
     glm::mat4 transformPizarron = glm::translate(glm::mat4(1.0f), glm::vec3(-18.75f, 2.46f, 23.0f)) *
         glm::scale(glm::mat4(1.0f), glm::vec3(2.2f, 1.8f, 2.0f));
-    originalModelTransforms[pPizarron] = transformPizarron;
-    modelToIndexMap[pPizarron] = currentIndexAnimatable++;
+    originalOldModelTransforms[pPizarron] = transformPizarron;
+    oldModelToIndexMap[pPizarron] = currentIndexOldAnimatable++;
 
     Model* pLogoUNAM = new Model((char*)"Models/logoUNAM.obj");
-    animatableModels.push_back(pLogoUNAM);
+    animatableOldModels.push_back(pLogoUNAM);
     glm::mat4 transformLogoUNAM = glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, 6.2f, 23.8f)) *
         glm::scale(glm::mat4(1.0f), glm::vec3(1.3f, 1.3f, 1.3f));
-    originalModelTransforms[pLogoUNAM] = transformLogoUNAM;
-    modelToIndexMap[pLogoUNAM] = currentIndexAnimatable++;
-
-    // Inicializar escalas para los modelos animables
-    modelScales.resize(animatableModels.size(), 1.0f);
+    originalOldModelTransforms[pLogoUNAM] = transformLogoUNAM;
+    oldModelToIndexMap[pLogoUNAM] = currentIndexOldAnimatable++;
 
 
-	// VAO y VBO para las lámparas
-	GLuint lampVAO, lampVBO;
-	glGenVertexArrays(1, &lampVAO);
-	glGenBuffers(1, &lampVBO);
-	glBindVertexArray(lampVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, lampVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(lampVertices), lampVertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-	glEnableVertexAttribArray(0);
-	glBindVertexArray(0); // Desvincular lampVAO
+    oldModelScales.resize(animatableOldModels.size(), 1.0f);
 
-	glm::mat4 projection = glm::perspective(glm::radians(camera.GetZoom()), (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 0.1f, 100.0f);
+    // --- Definir los NUEVOS modelos que aparecerán ---
+    glm::mat4 pantallaNuevaTargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(-24.75f, 0.2f, 16.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.5f, 2.5f, 2.5f));
+    glm::vec3 pantallaNuevaFinalScale = glm::vec3(2.5f, 2.5f, 2.5f);
+
+    newSceneModels.emplace_back("Models/pantallaNueva.obj", pantallaNuevaTargetTransform, pantallaNuevaFinalScale);
+
+
+    GLuint lampVAO, lampVBO;
+    glGenVertexArrays(1, &lampVAO);
+    glGenBuffers(1, &lampVBO);
+    glBindVertexArray(lampVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, lampVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(lampVertices), lampVertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+    glBindVertexArray(0);
+
+    glm::mat4 projection = glm::perspective(glm::radians(camera.GetZoom()), (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 0.1f, 100.0f);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -245,28 +284,88 @@ int main()
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // --- Actualizar Animación de Desaparición ---
-        if (startDisappearAnimation && !modelsVanished)
-        {
-            bool allSmall = true;
-            for (size_t i = 0; i < modelScales.size(); ++i)
-            {
-                if (modelScales[i] > 0.0f)
-                {
-                    modelScales[i] -= disappearSpeed * deltaTime;
-                    if (modelScales[i] < 0.0f) modelScales[i] = 0.0f;
-                    allSmall = false; // Al menos un modelo aún no es cero
+        // --- Animación de DESAPARICIÓN de Modelos Antiguos ---
+        if (startDisappearAnimation && !oldModelsVanished) {
+            bool allOldSmall = true;
+            if (!animatableOldModels.empty()) {
+                for (size_t i = 0; i < oldModelScales.size(); ++i) {
+                    if (oldModelScales[i] > 0.0f) {
+                        oldModelScales[i] -= disappearSpeed * deltaTime;
+                        if (oldModelScales[i] < 0.0f) oldModelScales[i] = 0.0f;
+                    }
+                    if (oldModelScales[i] > 0.001f) allOldSmall = false;
                 }
             }
-            if (allSmall)
-            {
-                modelsVanished = true;
-                startDisappearAnimation = false; // Detener la animación de encogimiento
-                std::cout << "Modelos desaparecieron. Listo para cargar nuevos modelos." << std::endl;
-                
+            if (allOldSmall) {
+                oldModelsVanished = true;
+                std::cout << "Modelos ANTIGUOS desaparecieron. Presiona 'O' para que aparezcan los nuevos." << std::endl;
             }
         }
-        // --------------------------------------------
+        // --- Animación de APARICIÓN de Modelos Nuevos ---
+        if (startAppearAnimationGlobal && oldModelsVanished && appearingModelIndex < (int)newSceneModels.size()) {
+            if (appearingModelIndex == -1) {
+                appearingModelIndex = 0;
+                while (appearingModelIndex < (int)newSceneModels.size() &&
+                    newSceneModels[appearingModelIndex].phase == AppearPhase::FINISHED) {
+                    appearingModelIndex++;
+                }
+                if (appearingModelIndex < (int)newSceneModels.size()) {
+                    newSceneModels[appearingModelIndex].StartAnimation(); 
+                }
+                else {
+                    startAppearAnimationGlobal = false;
+                }
+            }
+
+            if (appearingModelIndex < (int)newSceneModels.size()) {
+                NewModelAnimated& currentNewModel = newSceneModels[appearingModelIndex];
+
+                // Limitar deltaTime para suavizar saltos
+                float cappedDeltaTime = glm::min(deltaTime, 0.033f); // ej. no más de ~30 FPS para la lógica de animación
+
+                if (currentNewModel.modelPtr && currentNewModel.phase == AppearPhase::GROWING) {
+                    currentNewModel.currentScaleFactor += growSpeed * cappedDeltaTime;
+                    if (currentNewModel.currentScaleFactor >= 1.0f) {
+                        currentNewModel.currentScaleFactor = 1.0f;
+                        currentNewModel.phase = AppearPhase::MOVING;
+                        currentNewModel.movementProgress = 0.0f;
+                        
+                        std::cout << "Modelo " << currentNewModel.path << " crecio. Iniciando movimiento." << std::endl;
+                    }
+                }
+                else if (currentNewModel.modelPtr && currentNewModel.phase == AppearPhase::MOVING) {
+                    glm::vec3 targetPos = glm::vec3(currentNewModel.targetTransform[3]);
+                    // El punto de inicio para la interpolación es el spawnPosition
+                    glm::vec3 startMovePos = currentNewModel.spawnPosition;
+
+                    if (newModelMoveDuration > 0.001f) {
+                        currentNewModel.movementProgress += (1.0f / newModelMoveDuration) * cappedDeltaTime;
+                    }
+                    else {
+                        currentNewModel.movementProgress = 1.0f;
+                    }
+
+                    if (currentNewModel.movementProgress >= 1.0f) {
+                        currentNewModel.movementProgress = 1.0f;
+                        currentNewModel.phase = AppearPhase::FINISHED;
+                        currentNewModel.currentPosition = targetPos; // Asegurar posición final
+                        std::cout << "Modelo " << currentNewModel.path << " se movio a su posicion." << std::endl;
+
+                        appearingModelIndex++;
+                        if (appearingModelIndex < (int)newSceneModels.size()) {
+                            newSceneModels[appearingModelIndex].StartAnimation(); // Iniciar siguiente
+                        }
+                        else {
+                            startAppearAnimationGlobal = false;
+                            std::cout << "Todos los nuevos modelos aparecieron." << std::endl;
+                        }
+                    }
+                    else {
+                        currentNewModel.currentPosition = glm::mix(startMovePos, targetPos, currentNewModel.movementProgress);
+                    }
+                }
+            }
+        }
 
         lightingShader.Use();
         glUniform3fv(glGetUniformLocation(lightingShader.Program, "viewPos"), 1, glm::value_ptr(camera.GetPosition()));
@@ -338,58 +437,72 @@ int main()
         glUniform1f(glGetUniformLocation(lightingShader.Program, "spotLight.outerCutOff"), glm::cos(glm::radians(12.0f)));
 
 
-
-
         // --- Dibujar Modelos ---
-        GLint modelLoc = glGetUniformLocation(lightingShader.Program, "model"); // Obtener una vez
+        GLint modelLoc = glGetUniformLocation(lightingShader.Program, "model");
         glm::mat4 modelMatrix;
 
-        // 1. Dibujar Laboratorio (NO se anima)
+        // --- Dibujar Laboratorio (permanente) ---
         modelMatrix = glm::mat4(1.0f);
         modelMatrix = glm::scale(modelMatrix, glm::vec3(1.0f, 1.0f, 1.5f));
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
         if (Laboratorio_permanente) Laboratorio_permanente->Draw(lightingShader);
-        glBindVertexArray(0); 
-
-		// 2. Dibujar pantalla nueva (prueba de tamaño)
-        modelMatrix = glm::mat4(1.0f);
-        modelMatrix = glm::translate(modelMatrix, glm::vec3(-24.75f, 0.2f, 16.0f)) *
-            glm::rotate(glm::mat4(1.0f), glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
-            glm::scale(glm::mat4(1.0f), glm::vec3(2.5f, 2.5f, 2.5f));
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-        if (PantallaNueva) PantallaNueva->Draw(lightingShader);
         glBindVertexArray(0);
 
-        // 2. Dibujar Modelos Animables (los que están en animatableModels)
-        for (Model* modelPtr : animatableModels)
-        {
-            size_t index = modelToIndexMap[modelPtr]; // Obtener el índice para esta instancia de modelo
-            float currentAnimatedScale = modelScales[index];
+        // --- Dibujar Modelos ANTIGUOS (animables que desaparecen) ---
+        if (!oldModelsVanished || startDisappearAnimation) { // Solo dibujar si no han desaparecido o la animación está activa
+            for (Model* modelPtr : animatableOldModels) {
+                size_t index = oldModelToIndexMap[modelPtr];
+                float currentOldScale = oldModelScales[index];
+                if (currentOldScale <= 0.001f && oldModelsVanished) continue;
 
-            if (currentAnimatedScale <= 0.001f && modelsVanished) continue; // No dibujar si ya es muy pequeño
-
-            // Empezar con la transformación original específica de esta instancia de modelo
-            modelMatrix = originalModelTransforms[modelPtr];
-
-            // Aplicar la escala de animación encima de la transformación original
-            modelMatrix = glm::scale(modelMatrix, glm::vec3(currentAnimatedScale));
-
-            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-
-            if (currentAnimatedScale > 0.001f) {
-                modelPtr->Draw(lightingShader);
+                modelMatrix = originalOldModelTransforms[modelPtr];
+                modelMatrix = glm::scale(modelMatrix, glm::vec3(currentOldScale));
+                glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+                if (currentOldScale > 0.001f) modelPtr->Draw(lightingShader);
+                glBindVertexArray(0);
             }
-            glBindVertexArray(0); // Buena práctica
+        }
+        // --- Dibujar Modelos NUEVOS (animables que aparecen) ---
+        if (oldModelsVanished) { // Empezar a dibujar/animar los nuevos solo cuando los viejos se fueron
+            for (size_t i = 0; i < newSceneModels.size(); ++i) {
+                NewModelAnimated& newModel = newSceneModels[i];
+                if (newModel.modelPtr && newModel.phase != AppearPhase::IDLE) {
+                    modelMatrix = glm::mat4(1.0f);
+
+                    // Obtener rotación y posición finales de targetTransform
+                    glm::quat finalRotation = glm::normalize(glm::quat_cast(newModel.targetTransform));
+                    glm::vec3 finalPosition = glm::vec3(newModel.targetTransform[3]);
+
+                    if (newModel.phase == AppearPhase::GROWING) {
+                        modelMatrix = glm::translate(glm::mat4(1.0f), newModel.currentPosition); // En spawnPosition (cerca de la cámara)
+                        modelMatrix *= glm::mat4_cast(newModel.spawnOrientation); // Orientación durante el crecimiento
+                        modelMatrix = glm::scale(modelMatrix, newModel.finalModelScale * newModel.currentScaleFactor);
+                    }
+                    else if (newModel.phase == AppearPhase::MOVING) {
+                        modelMatrix = glm::translate(glm::mat4(1.0f), newModel.currentPosition); // Posición interpolada
+                        modelMatrix *= glm::mat4_cast(finalRotation); // Orientación final
+                        modelMatrix = glm::scale(modelMatrix, newModel.finalModelScale);
+                    }
+                    else if (newModel.phase == AppearPhase::FINISHED) {
+                        modelMatrix = glm::translate(glm::mat4(1.0f), finalPosition);
+                        modelMatrix *= glm::mat4_cast(finalRotation);
+                        modelMatrix = glm::scale(modelMatrix, newModel.finalModelScale);
+                        
+                    }
+
+                    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+                    newModel.modelPtr->Draw(lightingShader);
+                    glBindVertexArray(0);
+                }
+            }
         }
 
 
+        if (pPantalla1_visual) { 
+            size_t pantallaIndex = oldModelToIndexMap[pPantalla1_visual];
+            float pantallaAnimScale = oldModelScales[pantallaIndex];
 
-        // Ejemplo para dibujar la SEGUNDA PANTALLA (usando el mismo pPantalla1_visual pero con otra transform):
-        if (pPantalla1_visual) { // Asegurarse que pPantalla1_visual (o el nombre que le diste) existe
-            size_t pantallaIndex = modelToIndexMap[pPantalla1_visual];
-            float pantallaAnimScale = modelScales[pantallaIndex];
-
-            if (pantallaAnimScale > 0.001f || (!startDisappearAnimation && !modelsVanished)) { // Dibujar si es visible o la animación no ha empezado
+            if (pantallaAnimScale > 0.001f || (!startDisappearAnimation && !oldModelsVanished)) { // Dibujar si es visible o la animación no ha empezado
                 // SEGUNDA TRANSFORMACIÓN PARA PANTALLA
                 glm::mat4 transformPantalla2 = glm::translate(glm::mat4(1.0f), glm::vec3(-25.75f, 4.0f, 16.0f)) *
                     glm::rotate(glm::mat4(1.0f), glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
@@ -404,10 +517,10 @@ int main()
 
 
         if (pSilla) { 
-            size_t sillaAnimIndex = modelToIndexMap[pSilla];
-            float sillaCurrentScale = modelScales[sillaAnimIndex];
+            size_t sillaAnimIndex = oldModelToIndexMap[pSilla];
+            float sillaCurrentScale = oldModelScales[sillaAnimIndex];
 
-            if (sillaCurrentScale > 0.001f || (!startDisappearAnimation && !modelsVanished)) {
+            if (sillaCurrentScale > 0.001f || (!startDisappearAnimation && !oldModelsVanished)) {
                 // Silla 2
                 modelMatrix = glm::mat4(1.0f);
                 modelMatrix = glm::translate(modelMatrix, glm::vec3(-20.2f, 0.17f, 2.0f))*
@@ -530,10 +643,10 @@ int main()
         }
 
         if (pEscritorio) { 
-            size_t escritorioAnimIndex = modelToIndexMap[pEscritorio];
-            float escritorioCurrentScale = modelScales[escritorioAnimIndex];
+            size_t escritorioAnimIndex = oldModelToIndexMap[pEscritorio];
+            float escritorioCurrentScale = oldModelScales[escritorioAnimIndex];
 
-            if (escritorioCurrentScale > 0.001f || (!startDisappearAnimation && !modelsVanished)) {
+            if (escritorioCurrentScale > 0.001f || (!startDisappearAnimation && !oldModelsVanished)) {
 				// Escritorio 2
                 modelMatrix = glm::mat4(1.0f);
                 modelMatrix = glm::translate(modelMatrix, glm::vec3(-11.75f, 3.1f, 1.5f)) *
@@ -541,7 +654,7 @@ int main()
                     glm::scale(glm::mat4(1.0f), glm::vec3(1.25f, 1.1f, 1.2f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(escritorioCurrentScale)); // Escala animada
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-                pEscritorio->Draw(lightingShader); // Dibuja el mismo objeto Model* Silla
+                pEscritorio->Draw(lightingShader); 
                 glBindVertexArray(0);
 
                 // Escritorio 3
@@ -551,7 +664,7 @@ int main()
                     glm::scale(glm::mat4(1.0f), glm::vec3(1.25f, 1.1f, 1.2f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(escritorioCurrentScale)); // Escala animada
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-                pEscritorio->Draw(lightingShader); // Dibuja el mismo objeto Model* Silla
+                pEscritorio->Draw(lightingShader); 
                 glBindVertexArray(0);
 
                 // Escritorio 4
@@ -561,16 +674,16 @@ int main()
                     glm::scale(glm::mat4(1.0f), glm::vec3(1.25f, 1.1f, 1.2f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(escritorioCurrentScale)); // Escala animada
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-                pEscritorio->Draw(lightingShader); // Dibuja el mismo objeto Model* Silla
+                pEscritorio->Draw(lightingShader); 
                 glBindVertexArray(0);
             }
         }
 
         if (pEscritorio2) {
-            size_t escritorio2AnimIndex = modelToIndexMap[pEscritorio2];
-            float escritorio2CurrentScale = modelScales[escritorio2AnimIndex];
+            size_t escritorio2AnimIndex = oldModelToIndexMap[pEscritorio2];
+            float escritorio2CurrentScale = oldModelScales[escritorio2AnimIndex];
 
-            if (escritorio2CurrentScale > 0.001f || (!startDisappearAnimation && !modelsVanished)) {
+            if (escritorio2CurrentScale > 0.001f || (!startDisappearAnimation && !oldModelsVanished)) {
                 // Escritorio 2
                 modelMatrix = glm::mat4(1.0f);
                 modelMatrix = glm::translate(modelMatrix, glm::vec3(-9.57f, 0.25f, 8.74f)) *
@@ -578,7 +691,7 @@ int main()
                     glm::scale(glm::mat4(1.0f), glm::vec3(0.06f, 0.10f, 0.06f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(escritorio2CurrentScale)); // Escala animada
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-                pEscritorio2->Draw(lightingShader); // Dibuja el mismo objeto Model* Silla
+                pEscritorio2->Draw(lightingShader); 
                 glBindVertexArray(0);
 
                 // Escritorio 3
@@ -588,7 +701,7 @@ int main()
                     glm::scale(glm::mat4(1.0f), glm::vec3(0.06f, 0.10f, 0.06f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(escritorio2CurrentScale)); // Escala animada
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-                pEscritorio2->Draw(lightingShader); // Dibuja el mismo objeto Model* Silla
+                pEscritorio2->Draw(lightingShader); 
                 glBindVertexArray(0);
 
                 // Escritorio 4
@@ -598,7 +711,7 @@ int main()
                     glm::scale(glm::mat4(1.0f), glm::vec3(0.06f, 0.10f, 0.06f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(escritorio2CurrentScale)); // Escala animada
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-                pEscritorio2->Draw(lightingShader); // Dibuja el mismo objeto Model* Silla
+                pEscritorio2->Draw(lightingShader); 
                 glBindVertexArray(0);
 
                 // Escritorio 4
@@ -608,16 +721,16 @@ int main()
                     glm::scale(glm::mat4(1.0f), glm::vec3(0.06f, 0.10f, 0.06f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(escritorio2CurrentScale)); // Escala animada
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-                pEscritorio2->Draw(lightingShader); // Dibuja el mismo objeto Model* Silla
+                pEscritorio2->Draw(lightingShader); 
                 glBindVertexArray(0);
             }
         }
 
         if (pSillonNaranja) {
-            size_t sillonNaranjaAnimIndex = modelToIndexMap[pSillonNaranja];
-            float sillonNaranjaCurrentScale = modelScales[sillonNaranjaAnimIndex];
+            size_t sillonNaranjaAnimIndex = oldModelToIndexMap[pSillonNaranja];
+            float sillonNaranjaCurrentScale = oldModelScales[sillonNaranjaAnimIndex];
 
-            if (sillonNaranjaCurrentScale > 0.001f || (!startDisappearAnimation && !modelsVanished)) {
+            if (sillonNaranjaCurrentScale > 0.001f || (!startDisappearAnimation && !oldModelsVanished)) {
              
                 // SillonNaranja 2
                 modelMatrix = glm::mat4(1.0f);
@@ -625,7 +738,7 @@ int main()
                     glm::scale(glm::mat4(1.0f), glm::vec3(2.6f, 2.8f, 2.6f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(sillonNaranjaCurrentScale)); // Escala animada
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-                pSillonNaranja->Draw(lightingShader); // Dibuja el mismo objeto Model* Silla
+                pSillonNaranja->Draw(lightingShader); 
                 glBindVertexArray(0);
 
                 // SillonNaranja 3
@@ -634,7 +747,7 @@ int main()
                     glm::scale(glm::mat4(1.0f), glm::vec3(2.6f, 2.8f, 2.6f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(sillonNaranjaCurrentScale)); // Escala animada
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-                pSillonNaranja->Draw(lightingShader); // Dibuja el mismo objeto Model* Silla
+                pSillonNaranja->Draw(lightingShader); 
                 glBindVertexArray(0);
 
                 // SillonNaranja 4
@@ -643,16 +756,16 @@ int main()
                     glm::scale(glm::mat4(1.0f), glm::vec3(2.6f, 2.8f, 2.6f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(sillonNaranjaCurrentScale)); // Escala animada
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-                pSillonNaranja->Draw(lightingShader); // Dibuja el mismo objeto Model* Silla
+                pSillonNaranja->Draw(lightingShader); 
                 glBindVertexArray(0);
             }
         }
 
         if (pSillonGris) {
-            size_t sillonGrisAnimIndex = modelToIndexMap[pSillonGris];
-            float sillonGrisCurrentScale = modelScales[sillonGrisAnimIndex];
+            size_t sillonGrisAnimIndex = oldModelToIndexMap[pSillonGris];
+            float sillonGrisCurrentScale = oldModelScales[sillonGrisAnimIndex];
 
-            if (sillonGrisCurrentScale > 0.001f || (!startDisappearAnimation && !modelsVanished)) {
+            if (sillonGrisCurrentScale > 0.001f || (!startDisappearAnimation && !oldModelsVanished)) {
 
                 // SillonNaranja 2
                 modelMatrix = glm::mat4(1.0f);
@@ -660,27 +773,28 @@ int main()
                     glm::scale(glm::mat4(1.0f), glm::vec3(2.6f, 2.8f, 2.6f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(sillonGrisCurrentScale)); // Escala animada
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-                pSillonGris->Draw(lightingShader); // Dibuja el mismo objeto Model* Silla
+                pSillonGris->Draw(lightingShader);
                 glBindVertexArray(0);
             }
+
         }
 
 
-        // --- Dibujar Lámparas (como en tu archivo, para 4 luces) ---
+        //lamparas
         lampShader.Use();
-        GLint lampModelLoc = glGetUniformLocation(lampShader.Program, "model"); // Ubicación diferente para el shader de la lámpara
+        GLint lampModelLoc = glGetUniformLocation(lampShader.Program, "model");
         GLint lampViewLoc = glGetUniformLocation(lampShader.Program, "view");
         GLint lampProjLoc = glGetUniformLocation(lampShader.Program, "projection");
         glUniformMatrix4fv(lampViewLoc, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(lampProjLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
         glBindVertexArray(lampVAO);
-        glm::mat4 lampModelMatrix; // Renombrada para evitar confusión
-        for (GLuint i = 0; i < 4; i++) // Iterar sobre tus 4 luces
+        glm::mat4 lampModelMatrix;
+        for (GLuint i = 0; i < 4; i++)
         {
             lampModelMatrix = glm::mat4(1.0f);
             lampModelMatrix = glm::translate(lampModelMatrix, pointLightPositions[i]);
-            lampModelMatrix = glm::scale(lampModelMatrix, glm::vec3(0.2f)); // Escala original de la lámpara
+            lampModelMatrix = glm::scale(lampModelMatrix, glm::vec3(0.2f));
             glUniformMatrix4fv(lampModelLoc, 1, GL_FALSE, glm::value_ptr(lampModelMatrix));
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
@@ -688,50 +802,78 @@ int main()
 
         glfwSwapBuffers(window);
     }
-
-  
+    // --- Limpieza ---
+    delete Laboratorio_permanente;
+    if (PantallaNueva_Test) delete PantallaNueva_Test; // Si lo usaste
+    for (Model* m : animatableOldModels) { delete m; }
+    animatableOldModels.clear();
+    for (NewModelAnimated& nm : newSceneModels) { if (nm.modelPtr) delete nm.modelPtr; }
+    newSceneModels.clear();
+    glDeleteVertexArrays(1, &lampVAO);
+    glDeleteBuffers(1, &lampVBO);
+    glfwTerminate();
+    return EXIT_SUCCESS;
 }
 
-
-void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode)
-{
+void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode) {
+    // ... (Lógica para teclas P y O sin cambios en la función StartAnimation) ...
     if (action == GLFW_PRESS) keys[key] = true;
     else if (action == GLFW_RELEASE) keys[key] = false;
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
 
-    if (key == GLFW_KEY_P && action == GLFW_PRESS) // Tecla 'P' para la animación
-    {
-        if (!startDisappearAnimation && !modelsVanished) {
+    if (key == GLFW_KEY_P && action == GLFW_PRESS) { // Desaparición modelos viejos
+        if (!startDisappearAnimation && !oldModelsVanished) {
             startDisappearAnimation = true;
-            std::cout << "Iniciando animación de desaparición..." << std::endl;
+            std::cout << "Iniciando animación de DESAPARICIÓN de modelos antiguos..." << std::endl;
         }
-        else if (modelsVanished) {
-            std::cout << "Modelos desaparecieron. Presiona P para resetear (ejemplo)." << std::endl;
-            // Ejemplo de reseteo:
-            modelsVanished = false;
-            startDisappearAnimation = false; // Para permitir que la animación se reinicie
-            for (size_t i = 0; i < modelScales.size(); ++i) {
-                modelScales[i] = 1.0f; // Restaurar escalas
-            }
-            std::cout << "Escena reseteada." << std::endl;
+        else if (oldModelsVanished && !startAppearAnimationGlobal && (appearingModelIndex == -1 || (appearingModelIndex >= (int)newSceneModels.size() - 1 && (newSceneModels.empty() || newSceneModels.back().phase == AppearPhase::FINISHED)))) {
+            oldModelsVanished = false;
+            for (float& scale : oldModelScales) scale = 1.0f;
+            std::cout << "Modelos antiguos reseteados." << std::endl;
         }
     }
-    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) // Control de luz parpadeante
-    {
-        active = !active; 
-        if (active)
-            Light1_Color_Factors = glm::vec3(1.0f, 0.5f, 0.2f);
-        else
-            Light1_Color_Factors = glm::vec3(0.0f); 
+
+    if (key == GLFW_KEY_O && action == GLFW_PRESS) { // Tecla 'O' para la aparición
+        if (oldModelsVanished && !startAppearAnimationGlobal) {
+            bool allNewFinished = newSceneModels.empty() ? false : true; // Si no hay modelos, no está terminado
+            for (const auto& nm : newSceneModels) {
+                if (nm.phase != AppearPhase::FINISHED) {
+                    allNewFinished = false;
+                    break;
+                }
+            }
+
+            if (appearingModelIndex == -1 || allNewFinished) {
+                appearingModelIndex = -1;
+                for (auto& nm : newSceneModels) {
+                    nm.phase = AppearPhase::IDLE;
+                    nm.currentScaleFactor = 0.0f;
+                    nm.movementProgress = 0.0f;
+                    nm.currentPosition = nm.spawnPosition; // Resetear posición al spawnPoint
+                }
+                std::cout << "Animación de aparición de nuevos modelos (re)iniciada." << std::endl;
+            }
+            startAppearAnimationGlobal = true;
+
+        }
+        else if (startAppearAnimationGlobal) {
+            std::cout << "Animación de aparición ya en curso." << std::endl;
+        }
+        else if (!oldModelsVanished) {
+            std::cout << "Los modelos antiguos aún no han desaparecido (Presiona P)." << std::endl;
+        }
+    }
+    // ... (tu tecla SPACE para la luz parpadeante)
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
+        active = !active;
+        if (active) Light1_Color_Factors = glm::vec3(1.0f, 0.5f, 0.2f);
+        else Light1_Color_Factors = glm::vec3(1.0f);
     }
 }
 
-
-void MouseCallback(GLFWwindow* window, double xPos, double yPos)
-{
-    
+void MouseCallback(GLFWwindow* window, double xPos, double yPos) {
     if (firstMouse) { lastX = static_cast<GLfloat>(xPos); lastY = static_cast<GLfloat>(yPos); firstMouse = false; }
     GLfloat xOffset = static_cast<GLfloat>(xPos) - lastX;
     GLfloat yOffset = lastY - static_cast<GLfloat>(yPos);
@@ -739,11 +881,7 @@ void MouseCallback(GLFWwindow* window, double xPos, double yPos)
     lastY = static_cast<GLfloat>(yPos);
     camera.ProcessMouseMovement(xOffset, yOffset);
 }
-
-
-void DoMovement()
-{
- 
+void DoMovement() {
     if (keys[GLFW_KEY_W] || keys[GLFW_KEY_UP]) camera.ProcessKeyboard(FORWARD, deltaTime);
     if (keys[GLFW_KEY_S] || keys[GLFW_KEY_DOWN]) camera.ProcessKeyboard(BACKWARD, deltaTime);
     if (keys[GLFW_KEY_A] || keys[GLFW_KEY_LEFT]) camera.ProcessKeyboard(LEFT, deltaTime);

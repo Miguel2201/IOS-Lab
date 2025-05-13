@@ -74,6 +74,7 @@ std::vector<float> modelScales;       // Escalas para los modelos en animatableM
 std::map<Model*, glm::mat4> originalModelTransforms; // Sus transformaciones originales
 std::map<Model*, size_t> modelToIndexMap;          // Para encontrar su índice en modelScales
 Model* Laboratorio_permanente = nullptr;
+Model* PantallaNueva = nullptr; // Pantalla nueva que no se anima
 // ----------------------------------------------------
 
 int main()
@@ -112,6 +113,7 @@ int main()
 
     // 1. Laboratorio (NO se anima, NO se añade a animatableModels)
     Laboratorio_permanente = new Model((char*)"Models/laboratorio.obj");
+	PantallaNueva = new Model((char*)"Models/pantallaNueva.obj");
 
     // 2. Modelos que SÍ se animan y desaparecen
     Model* pAire = new Model((char*)"Models/aire.obj");
@@ -349,6 +351,15 @@ int main()
         if (Laboratorio_permanente) Laboratorio_permanente->Draw(lightingShader);
         glBindVertexArray(0); 
 
+		// 2. Dibujar pantalla nueva (prueba de tamaño)
+        modelMatrix = glm::mat4(1.0f);
+        modelMatrix = glm::translate(modelMatrix, glm::vec3(-24.75f, 0.2f, 16.0f)) *
+            glm::rotate(glm::mat4(1.0f), glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
+            glm::scale(glm::mat4(1.0f), glm::vec3(2.5f, 2.5f, 2.5f));
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+        if (PantallaNueva) PantallaNueva->Draw(lightingShader);
+        glBindVertexArray(0);
+
         // 2. Dibujar Modelos Animables (los que están en animatableModels)
         for (Model* modelPtr : animatableModels)
         {
@@ -399,8 +410,8 @@ int main()
             if (sillaCurrentScale > 0.001f || (!startDisappearAnimation && !modelsVanished)) {
                 // Silla 2
                 modelMatrix = glm::mat4(1.0f);
-                modelMatrix = glm::translate(modelMatrix, glm::vec3(-20.2f, 0.17f, 2.0f));
-                modelMatrix = glm::scale(modelMatrix, glm::vec3(0.092f)); // Escala original de esta instancia de silla
+                modelMatrix = glm::translate(modelMatrix, glm::vec3(-20.2f, 0.17f, 2.0f))*
+                glm::scale(modelMatrix, glm::vec3(0.092f)); // Escala original de esta instancia de silla
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(sillaCurrentScale)); // Escala animada
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
                 pSilla->Draw(lightingShader); // Dibuja el mismo objeto Model* Silla
@@ -408,8 +419,8 @@ int main()
 
                 // Silla 3
                 modelMatrix = glm::mat4(1.0f);
-                modelMatrix = glm::translate(modelMatrix, glm::vec3(-14.5f, 0.17f, 2.0f));
-                modelMatrix = glm::scale(modelMatrix, glm::vec3(0.092f));
+                modelMatrix = glm::translate(modelMatrix, glm::vec3(-14.5f, 0.17f, 2.0f))*
+                glm::scale(modelMatrix, glm::vec3(0.092f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(sillaCurrentScale));
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
                 pSilla->Draw(lightingShader);
@@ -417,8 +428,8 @@ int main()
 
                 // Silla 4
                 modelMatrix = glm::mat4(1.0f);
-                modelMatrix = glm::translate(modelMatrix, glm::vec3(-11.75f, 0.17f, 2.0f));
-                modelMatrix = glm::scale(modelMatrix, glm::vec3(0.092f));
+                modelMatrix = glm::translate(modelMatrix, glm::vec3(-11.75f, 0.17f, 2.0f))*
+                glm::scale(modelMatrix, glm::vec3(0.092f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(sillaCurrentScale));
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
                 pSilla->Draw(lightingShader);
@@ -426,8 +437,8 @@ int main()
 
                 // Silla 5
                 modelMatrix = glm::mat4(1.0f);
-                modelMatrix = glm::translate(modelMatrix, glm::vec3(-5.5f, 0.17f, 2.0f));
-                modelMatrix = glm::scale(modelMatrix, glm::vec3(0.092f));
+                modelMatrix = glm::translate(modelMatrix, glm::vec3(-5.5f, 0.17f, 2.0f))*
+                glm::scale(modelMatrix, glm::vec3(0.092f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(sillaCurrentScale));
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
                 pSilla->Draw(lightingShader);
@@ -435,8 +446,8 @@ int main()
 
                 // Silla 6
                 modelMatrix = glm::mat4(1.0f);
-                modelMatrix = glm::translate(modelMatrix, glm::vec3(-2.75f, 0.17f, 2.0f));
-                modelMatrix = glm::scale(modelMatrix, glm::vec3(0.092f));
+                modelMatrix = glm::translate(modelMatrix, glm::vec3(-2.75f, 0.17f, 2.0f))*
+                glm::scale(modelMatrix, glm::vec3(0.092f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(sillaCurrentScale));
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
                 pSilla->Draw(lightingShader);
@@ -444,8 +455,8 @@ int main()
 
                 // Silla 7
                 modelMatrix = glm::mat4(1.0f);
-                modelMatrix = glm::translate(modelMatrix, glm::vec3(3.0f, 0.17f, 2.0f));
-                modelMatrix = glm::scale(modelMatrix, glm::vec3(0.092f));
+                modelMatrix = glm::translate(modelMatrix, glm::vec3(3.0f, 0.17f, 2.0f))*
+                glm::scale(modelMatrix, glm::vec3(0.092f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(sillaCurrentScale));
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
                 pSilla->Draw(lightingShader);
@@ -453,17 +464,18 @@ int main()
 
                 // Silla 8
                 modelMatrix = glm::mat4(1.0f);
-                modelMatrix = glm::translate(modelMatrix, glm::vec3(5.75f, 0.17f, 2.0f));
-                modelMatrix = glm::scale(modelMatrix, glm::vec3(0.092f));
+                modelMatrix = glm::translate(modelMatrix, glm::vec3(5.75f, 0.17f, 2.0f))*
+                glm::scale(modelMatrix, glm::vec3(0.092f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(sillaCurrentScale));
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
                 pSilla->Draw(lightingShader);
                 glBindVertexArray(0);
 
-                // Silla 9
+                // Silla 9 -- Escritorio2
                 modelMatrix = glm::mat4(1.0f);
-                modelMatrix = glm::translate(modelMatrix, glm::vec3(-22.9f, 0.17f, 15.0f));
-                modelMatrix = glm::scale(modelMatrix, glm::vec3(0.092f));
+                modelMatrix = glm::translate(modelMatrix, glm::vec3(-22.9f, 0.17f, 15.0f))*
+                    glm::rotate(glm::mat4(1.0f), glm::radians(10.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
+                    glm::scale(modelMatrix, glm::vec3(0.092f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(sillaCurrentScale));
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
                 pSilla->Draw(lightingShader);
@@ -471,8 +483,9 @@ int main()
 
                 // Silla 10
                 modelMatrix = glm::mat4(1.0f);
-                modelMatrix = glm::translate(modelMatrix, glm::vec3(-20.5f, 0.17f, 15.0));
-                modelMatrix = glm::scale(modelMatrix, glm::vec3(0.092f));
+                modelMatrix = glm::translate(modelMatrix, glm::vec3(-20.25f, 0.17f, 15.2))*
+                    glm::rotate(glm::mat4(1.0f), glm::radians(-15.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
+                    glm::scale(modelMatrix, glm::vec3(0.092f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(sillaCurrentScale));
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
                 pSilla->Draw(lightingShader);
@@ -480,8 +493,8 @@ int main()
 
                 // Silla 11
                 modelMatrix = glm::mat4(1.0f);
-                modelMatrix = glm::translate(modelMatrix, glm::vec3(-10.75f, 0.17f, 13.75f));
-                modelMatrix = glm::scale(modelMatrix, glm::vec3(0.092f));
+                modelMatrix = glm::translate(modelMatrix, glm::vec3(-10.75f, 0.17f, 7.85f))*
+                glm::scale(modelMatrix, glm::vec3(0.092f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(sillaCurrentScale));
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
                 pSilla->Draw(lightingShader);
@@ -489,8 +502,8 @@ int main()
 
                 // Silla 12
                 modelMatrix = glm::mat4(1.0f);
-                modelMatrix = glm::translate(modelMatrix, glm::vec3(-7.75f, 0.17f, 13.75f));
-                modelMatrix = glm::scale(modelMatrix, glm::vec3(0.092f));
+                modelMatrix = glm::translate(modelMatrix, glm::vec3(-8.25f, 0.17f, 7.85f)) *
+                    glm::scale(modelMatrix, glm::vec3(0.092f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(sillaCurrentScale));
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
                 pSilla->Draw(lightingShader);
@@ -498,8 +511,17 @@ int main()
 
                 // Silla 13
                 modelMatrix = glm::mat4(1.0f);
-                modelMatrix = glm::translate(modelMatrix, glm::vec3(-4.75f, 0.17f, 13.75f));
-                modelMatrix = glm::scale(modelMatrix, glm::vec3(0.092f));
+                modelMatrix = glm::translate(modelMatrix, glm::vec3(-1.75f, 0.17f, 13.75f))*
+                glm::scale(modelMatrix, glm::vec3(0.092f));
+                modelMatrix = glm::scale(modelMatrix, glm::vec3(sillaCurrentScale));
+                glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+                pSilla->Draw(lightingShader);
+                glBindVertexArray(0);
+
+                // Silla 14
+                modelMatrix = glm::mat4(1.0f);
+                modelMatrix = glm::translate(modelMatrix, glm::vec3(1.75f, 0.17f, 13.75f))*
+                glm::scale(modelMatrix, glm::vec3(0.092f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(sillaCurrentScale));
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
                 pSilla->Draw(lightingShader);
@@ -551,7 +573,7 @@ int main()
             if (escritorio2CurrentScale > 0.001f || (!startDisappearAnimation && !modelsVanished)) {
                 // Escritorio 2
                 modelMatrix = glm::mat4(1.0f);
-                modelMatrix = glm::translate(modelMatrix, glm::vec3(-9.57f, 0.25f, 8.75f)) *
+                modelMatrix = glm::translate(modelMatrix, glm::vec3(-9.57f, 0.25f, 8.74f)) *
                     glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
                     glm::scale(glm::mat4(1.0f), glm::vec3(0.06f, 0.10f, 0.06f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(escritorio2CurrentScale)); // Escala animada
@@ -562,7 +584,7 @@ int main()
                 // Escritorio 3
                 modelMatrix = glm::mat4(1.0f);
                 modelMatrix = glm::translate(modelMatrix, glm::vec3(-5.0f, 0.25f, 8.0f)) *
-                    glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
+                    glm::rotate(glm::mat4(1.0f), glm::radians(220.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
                     glm::scale(glm::mat4(1.0f), glm::vec3(0.06f, 0.10f, 0.06f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(escritorio2CurrentScale)); // Escala animada
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
@@ -593,15 +615,15 @@ int main()
 
         if (pSillonNaranja) {
             size_t sillonNaranjaAnimIndex = modelToIndexMap[pSillonNaranja];
-            float sillonNarnajaCurrentScale = modelScales[sillonNaranjaAnimIndex];
+            float sillonNaranjaCurrentScale = modelScales[sillonNaranjaAnimIndex];
 
-            if (sillonNarnajaCurrentScale > 0.001f || (!startDisappearAnimation && !modelsVanished)) {
+            if (sillonNaranjaCurrentScale > 0.001f || (!startDisappearAnimation && !modelsVanished)) {
              
                 // SillonNaranja 2
                 modelMatrix = glm::mat4(1.0f);
                 modelMatrix = glm::translate(modelMatrix, glm::vec3(2.0f, 0.18f, 22.5f)) *
                     glm::scale(glm::mat4(1.0f), glm::vec3(2.6f, 2.8f, 2.6f));
-                modelMatrix = glm::scale(modelMatrix, glm::vec3(sillonNarnajaCurrentScale)); // Escala animada
+                modelMatrix = glm::scale(modelMatrix, glm::vec3(sillonNaranjaCurrentScale)); // Escala animada
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
                 pSillonNaranja->Draw(lightingShader); // Dibuja el mismo objeto Model* Silla
                 glBindVertexArray(0);
@@ -610,7 +632,7 @@ int main()
                 modelMatrix = glm::mat4(1.0f);
                 modelMatrix = glm::translate(modelMatrix, glm::vec3(-2.0f, 0.18f, 22.5f)) *
                     glm::scale(glm::mat4(1.0f), glm::vec3(2.6f, 2.8f, 2.6f));
-                modelMatrix = glm::scale(modelMatrix, glm::vec3(sillonNarnajaCurrentScale)); // Escala animada
+                modelMatrix = glm::scale(modelMatrix, glm::vec3(sillonNaranjaCurrentScale)); // Escala animada
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
                 pSillonNaranja->Draw(lightingShader); // Dibuja el mismo objeto Model* Silla
                 glBindVertexArray(0);
@@ -619,9 +641,26 @@ int main()
                 modelMatrix = glm::mat4(1.0f);
                 modelMatrix = glm::translate(modelMatrix, glm::vec3(-6.0f, 0.18f, 22.5f)) *
                     glm::scale(glm::mat4(1.0f), glm::vec3(2.6f, 2.8f, 2.6f));
-                modelMatrix = glm::scale(modelMatrix, glm::vec3(sillonNarnajaCurrentScale)); // Escala animada
+                modelMatrix = glm::scale(modelMatrix, glm::vec3(sillonNaranjaCurrentScale)); // Escala animada
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
                 pSillonNaranja->Draw(lightingShader); // Dibuja el mismo objeto Model* Silla
+                glBindVertexArray(0);
+            }
+        }
+
+        if (pSillonGris) {
+            size_t sillonGrisAnimIndex = modelToIndexMap[pSillonGris];
+            float sillonGrisCurrentScale = modelScales[sillonGrisAnimIndex];
+
+            if (sillonGrisCurrentScale > 0.001f || (!startDisappearAnimation && !modelsVanished)) {
+
+                // SillonNaranja 2
+                modelMatrix = glm::mat4(1.0f);
+                modelMatrix = glm::translate(modelMatrix, glm::vec3(4.0f, 0.18f, 22.5f)) *
+                    glm::scale(glm::mat4(1.0f), glm::vec3(2.6f, 2.8f, 2.6f));
+                modelMatrix = glm::scale(modelMatrix, glm::vec3(sillonGrisCurrentScale)); // Escala animada
+                glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+                pSillonGris->Draw(lightingShader); // Dibuja el mismo objeto Model* Silla
                 glBindVertexArray(0);
             }
         }

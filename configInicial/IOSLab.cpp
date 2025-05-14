@@ -61,6 +61,8 @@ std::map<Model*, glm::mat4> originalOldModelTransforms;
 std::map<Model*, size_t> oldModelToIndexMap;
 Model* Laboratorio_permanente = nullptr;
 
+
+
 // ---------------------------------------------------------------
 // --- Variables para Animación de Aparición (Escena Nueva) ---
 enum class AppearPhase { IDLE, GROWING, MOVING, FINISHED };
@@ -69,6 +71,11 @@ int appearingModelIndex = -1;
 
 // Definir un punto de aparición FIJO, fuera del laboratorio, cerca de la pos inicial de la cámara
 const glm::vec3 FIXED_SPAWN_POINT = glm::vec3(25.0f, 2.5f, 9.5f); // AJUSTA ESTAS COORDENADAS
+
+// --- Variables para Animación de Productos Apple ---
+enum class ApplePhase { IDLE, SPAWN_GROWING, SPAWN_ROTATING, MOVING_TO_FINAL, FINISHED };
+bool startAppleProductAnimationGlobal = false;
+int currentAppleProductIndex = -1;
 
 
 struct NewModelAnimated {
@@ -115,12 +122,67 @@ struct NewModelAnimated {
             << spawnPosition.x << ", " << spawnPosition.y << ", " << spawnPosition.z << ")" << std::endl;
     }
 };
+
+struct AppleProductAnimated {
+    Model* modelPtr = nullptr;
+    glm::mat4 targetTransformFinal = glm::mat4(1.0f); // Destino final (incluye pos, rot, escala)
+    glm::vec3 finalModelScale = glm::vec3(1.0f);      // Escala final del modelo
+
+    glm::vec3 spawnPointApple = glm::vec3(0.0f);   // Donde aparece, crece y rota
+    glm::quat initialOrientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f); // Orientación durante crecimiento y rotación en spawn
+
+    glm::vec3 currentPosition = glm::vec3(0.0f);
+    float currentScaleFactor = 0.0f; // De 0.0 a 1.0 (para modular finalModelScale)
+
+    float currentYRotationDegrees = 0.0f; // Para la fase SPAWN_ROTATING
+    float totalYRotationDegrees = 360.0f * 2.0f; // Ejemplo: 2 vueltas completas
+    float rotationSpeedDegrees = 180.0f; // Grados por segundo
+
+    float movementProgress = 0.0f;   // De 0.0 a 1.0
+    ApplePhase phase = ApplePhase::IDLE;
+    bool isLoaded = false;
+    std::string path;
+
+    AppleProductAnimated(const std::string& p, const glm::vec3& spawnP, const glm::mat4& target, const glm::vec3& finalScaleVec)
+        : path(p), spawnPointApple(spawnP), targetTransformFinal(target), finalModelScale(finalScaleVec) {
+    }
+
+    void Load() {
+        if (!isLoaded && !path.empty()) {
+            modelPtr = new Model((char*)path.c_str());
+            isLoaded = true;
+            if (modelPtr) std::cout << "Cargado producto Apple: " << path << std::endl;
+            else std::cerr << "ERROR AL CARGAR PRODUCTO APPLE: " << path << std::endl;
+        }
+    }
+    void StartAnimationSequence() {
+        if (!isLoaded) Load();
+        if (!modelPtr) {
+            phase = ApplePhase::FINISHED;
+            return;
+        }
+        // Orientación inicial: la orientación que tendrá en su destino final.
+        initialOrientation = glm::normalize(glm::quat_cast(targetTransformFinal));
+
+        currentPosition = spawnPointApple;
+        currentScaleFactor = 0.0f;
+        currentYRotationDegrees = 0.0f;
+        movementProgress = 0.0f;
+        phase = ApplePhase::SPAWN_GROWING;
+        std::cout << "Iniciando secuencia Apple para: " << path << " en ("
+            << spawnPointApple.x << ", " << spawnPointApple.y << ", " << spawnPointApple.z << ")" << std::endl;
+    }
+};
+
 std::vector<NewModelAnimated> newSceneModels;
 const float growSpeed = 0.3;    // Un poco más lento para ver mejor
 const float newModelMoveDuration = 1.0f; // Un poco más de tiempo para moverse
+std::vector<AppleProductAnimated> appleProducts;
+const float appleGrowDuration = 1.5f;
+const float appleMoveDuration = 2.0f;
 // -------------------------------------------------------------
 
-Model* PantallaNueva_Test = nullptr; 
+Model* Ipad_modelo = nullptr; // Cargaremos el iPad a través de AppleProductAnimated
 
 int main()
 {
@@ -155,6 +217,7 @@ int main()
     // --- Carga de Modelos INICIALES (que desaparecerán) ---
     size_t currentIndexOldAnimatable = 0;
     Laboratorio_permanente = new Model((char*)"Models/laboratorio.obj");
+	
 
     Model* pAire = new Model((char*)"Models/aire.obj");
     animatableOldModels.push_back(pAire);
@@ -252,6 +315,8 @@ int main()
 
     oldModelScales.resize(animatableOldModels.size(), 1.0f);
 
+    
+
     // --- Definir los NUEVOS modelos que aparecerán ---
     glm::mat4 pantallaNuevaTargetTransform =
         glm::translate(glm::mat4(1.0f), glm::vec3(-24.75f, 0.2f, 16.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.5f, 2.5f, 2.5f));
@@ -273,96 +338,105 @@ int main()
     glm::vec3 logoIOSFinalScale = glm::vec3(1.1f, 1.3f, 1.1f);
     newSceneModels.emplace_back("Models/logoIOS2.obj", logoIOSTargetTransform, logoIOSFinalScale);
 
-    glm::mat4 logoUNAMTargetTransform =
-        glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, 6.2f, 23.8f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.3f, 1.3f, 1.3f));
-    glm::vec3 logoUNAMFinalScale = glm::vec3(1.3f, 1.3f, 1.3f);
-    newSceneModels.emplace_back("Models/logoUNAM.obj", logoUNAMTargetTransform, logoUNAMFinalScale);
+    //glm::mat4 logoUNAMTargetTransform =
+    //    glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, 6.2f, 23.8f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.3f, 1.3f, 1.3f));
+    //glm::vec3 logoUNAMFinalScale = glm::vec3(1.3f, 1.3f, 1.3f);
+    //newSceneModels.emplace_back("Models/logoUNAM.obj", logoUNAMTargetTransform, logoUNAMFinalScale);
 
-    glm::mat4 escritorioTargetTransform =
-        glm::translate(glm::mat4(1.0f), glm::vec3(-20.25f, 3.35f, 1.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.25f, 1.1f, 1.2f));
-    glm::vec3 escritorioFinalScale = glm::vec3(1.25f, 1.1f, 1.2f);
-    newSceneModels.emplace_back("Models/escritorio.obj", escritorioTargetTransform, escritorioFinalScale);
+    //glm::mat4 escritorioTargetTransform =
+    //    glm::translate(glm::mat4(1.0f), glm::vec3(-20.25f, 3.35f, 1.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.25f, 1.1f, 1.2f));
+    //glm::vec3 escritorioFinalScale = glm::vec3(1.25f, 1.1f, 1.2f);
+    //newSceneModels.emplace_back("Models/escritorio.obj", escritorioTargetTransform, escritorioFinalScale);
 
-    glm::mat4 escritorio_2TargetTransform =
-        glm::translate(glm::mat4(1.0f), glm::vec3(-11.75f, 3.35f, 1.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.25f, 1.1f, 1.2f));
-    glm::vec3 escritorio_2FinalScale = glm::vec3(1.25f, 1.1f, 1.2f);
-    newSceneModels.emplace_back("Models/escritorio.obj", escritorio_2TargetTransform, escritorio_2FinalScale);
+    //glm::mat4 escritorio_2TargetTransform =
+    //    glm::translate(glm::mat4(1.0f), glm::vec3(-11.75f, 3.35f, 1.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.25f, 1.1f, 1.2f));
+    //glm::vec3 escritorio_2FinalScale = glm::vec3(1.25f, 1.1f, 1.2f);
+    //newSceneModels.emplace_back("Models/escritorio.obj", escritorio_2TargetTransform, escritorio_2FinalScale);
 
-    glm::mat4 escritorio_3TargetTransform =
-        glm::translate(glm::mat4(1.0f), glm::vec3(-2.75f, 3.35f, 1.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.25f, 1.1f, 1.2f));
-    glm::vec3 escritorio_3FinalScale = glm::vec3(1.25f, 1.1f, 1.2f);
-    newSceneModels.emplace_back("Models/escritorio.obj", escritorio_3TargetTransform, escritorio_3FinalScale);
+    //glm::mat4 escritorio_3TargetTransform =
+    //    glm::translate(glm::mat4(1.0f), glm::vec3(-2.75f, 3.35f, 1.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.25f, 1.1f, 1.2f));
+    //glm::vec3 escritorio_3FinalScale = glm::vec3(1.25f, 1.1f, 1.2f);
+    //newSceneModels.emplace_back("Models/escritorio.obj", escritorio_3TargetTransform, escritorio_3FinalScale);
 
     glm::mat4 escritorio_4TargetTransform =
         glm::translate(glm::mat4(1.0f), glm::vec3(5.75f, 3.35f, 1.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.25f, 1.1f, 1.2f));
     glm::vec3 escritorio_4FinalScale = glm::vec3(1.25f, 1.1f, 1.2f);
     newSceneModels.emplace_back("Models/escritorio.obj", escritorio_4TargetTransform, escritorio_4FinalScale);
 
-    glm::mat4 sillaTargetTransform =
-        glm::translate(glm::mat4(1.0f), glm::vec3(-22.9f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
-    glm::vec3 sillaFinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
-    newSceneModels.emplace_back("Models/silla.obj", sillaTargetTransform, sillaFinalScale);
+    //glm::mat4 sillaTargetTransform =
+    //    glm::translate(glm::mat4(1.0f), glm::vec3(-22.9f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
+    //glm::vec3 sillaFinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
+    //newSceneModels.emplace_back("Models/silla.obj", sillaTargetTransform, sillaFinalScale);
 
-    glm::mat4 silla2TargetTransform =
-        glm::translate(glm::mat4(1.0f), glm::vec3(-20.2f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
-    glm::vec3 silla2FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
-    newSceneModels.emplace_back("Models/silla.obj", silla2TargetTransform, silla2FinalScale);
+    //glm::mat4 silla2TargetTransform =
+    //    glm::translate(glm::mat4(1.0f), glm::vec3(-20.2f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
+    //glm::vec3 silla2FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
+    //newSceneModels.emplace_back("Models/silla.obj", silla2TargetTransform, silla2FinalScale);
 
-    glm::mat4 silla3TargetTransform =
-        glm::translate(glm::mat4(1.0f), glm::vec3(-14.5f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
-    glm::vec3 silla3FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
-    newSceneModels.emplace_back("Models/silla.obj", silla3TargetTransform, silla3FinalScale);
+    //glm::mat4 silla3TargetTransform =
+    //    glm::translate(glm::mat4(1.0f), glm::vec3(-14.5f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
+    //glm::vec3 silla3FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
+    //newSceneModels.emplace_back("Models/silla.obj", silla3TargetTransform, silla3FinalScale);
 
-    glm::mat4 silla4TargetTransform =
-        glm::translate(glm::mat4(1.0f), glm::vec3(-11.75f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
-    glm::vec3 silla4FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
-    newSceneModels.emplace_back("Models/silla.obj", silla4TargetTransform, silla4FinalScale);
+    //glm::mat4 silla4TargetTransform =
+    //    glm::translate(glm::mat4(1.0f), glm::vec3(-11.75f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
+    //glm::vec3 silla4FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
+    //newSceneModels.emplace_back("Models/silla.obj", silla4TargetTransform, silla4FinalScale);
 
-    glm::mat4 silla5TargetTransform =
-        glm::translate(glm::mat4(1.0f), glm::vec3(-5.5f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
-    glm::vec3 silla5FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
-    newSceneModels.emplace_back("Models/silla.obj", silla5TargetTransform, silla5FinalScale);
+    //glm::mat4 silla5TargetTransform =
+    //    glm::translate(glm::mat4(1.0f), glm::vec3(-5.5f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
+    //glm::vec3 silla5FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
+    //newSceneModels.emplace_back("Models/silla.obj", silla5TargetTransform, silla5FinalScale);
 
-    glm::mat4 silla6TargetTransform =
-        glm::translate(glm::mat4(1.0f), glm::vec3(-2.75f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
-    glm::vec3 silla6FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
-    newSceneModels.emplace_back("Models/silla.obj", silla6TargetTransform, silla6FinalScale);
+    //glm::mat4 silla6TargetTransform =
+    //    glm::translate(glm::mat4(1.0f), glm::vec3(-2.75f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
+    //glm::vec3 silla6FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
+    //newSceneModels.emplace_back("Models/silla.obj", silla6TargetTransform, silla6FinalScale);
 
-    glm::mat4 silla7TargetTransform =
-        glm::translate(glm::mat4(1.0f), glm::vec3(3.0f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
-    glm::vec3 silla7FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
-    newSceneModels.emplace_back("Models/silla.obj", silla7TargetTransform, silla7FinalScale);
+    //glm::mat4 silla7TargetTransform =
+    //    glm::translate(glm::mat4(1.0f), glm::vec3(3.0f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
+    //glm::vec3 silla7FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
+    //newSceneModels.emplace_back("Models/silla.obj", silla7TargetTransform, silla7FinalScale);
 
-    glm::mat4 silla8TargetTransform =
-        glm::translate(glm::mat4(1.0f), glm::vec3(5.75f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
-    glm::vec3 silla8FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
-    newSceneModels.emplace_back("Models/silla.obj", silla8TargetTransform, silla8FinalScale);
-    
-    glm::mat4 silla9TargetTransform =
-        glm::translate(glm::mat4(1.0f), glm::vec3(-22.9f, 0.17f, 15.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
-    glm::vec3 silla9FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
-    newSceneModels.emplace_back("Models/silla.obj", silla9TargetTransform, silla9FinalScale);
+    //glm::mat4 silla8TargetTransform =
+    //    glm::translate(glm::mat4(1.0f), glm::vec3(5.75f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
+    //glm::vec3 silla8FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
+    //newSceneModels.emplace_back("Models/silla.obj", silla8TargetTransform, silla8FinalScale);
+    //
+    //glm::mat4 silla9TargetTransform =
+    //    glm::translate(glm::mat4(1.0f), glm::vec3(-22.9f, 0.17f, 15.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
+    //glm::vec3 silla9FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
+    //newSceneModels.emplace_back("Models/silla.obj", silla9TargetTransform, silla9FinalScale);
 
-    glm::mat4 silla10TargetTransform =
-        glm::translate(glm::mat4(1.0f), glm::vec3(-20.25f, 0.17f, 15.2f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
-    glm::vec3 silla10FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
-    newSceneModels.emplace_back("Models/silla.obj", silla10TargetTransform, silla10FinalScale);
+    //glm::mat4 silla10TargetTransform =
+    //    glm::translate(glm::mat4(1.0f), glm::vec3(-20.25f, 0.17f, 15.2f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
+    //glm::vec3 silla10FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
+    //newSceneModels.emplace_back("Models/silla.obj", silla10TargetTransform, silla10FinalScale);
 
-    glm::mat4 sillonNaranjaTargetTransform =
-        glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.18f, 22.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.6f, 2.8f, 2.6f));
-    glm::vec3 sillonNaranjaFinalScale = glm::vec3(2.6f, 2.8f, 2.6f);
-    newSceneModels.emplace_back("Models/sillonNaranja.obj", sillonNaranjaTargetTransform, sillonNaranjaFinalScale);
+    //glm::mat4 sillonNaranjaTargetTransform =
+    //    glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.18f, 22.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.6f, 2.8f, 2.6f));
+    //glm::vec3 sillonNaranjaFinalScale = glm::vec3(2.6f, 2.8f, 2.6f);
+    //newSceneModels.emplace_back("Models/sillonNaranja.obj", sillonNaranjaTargetTransform, sillonNaranjaFinalScale);
 
-    glm::mat4 sillonNaranja2TargetTransform =
-        glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.18f, 22.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.6f, 2.8f, 2.6f));
-    glm::vec3 sillonNaranja2FinalScale = glm::vec3(2.6f, 2.8f, 2.6f);
-    newSceneModels.emplace_back("Models/sillonNaranja.obj", sillonNaranja2TargetTransform, sillonNaranja2FinalScale);
+    //glm::mat4 sillonNaranja2TargetTransform =
+    //    glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.18f, 22.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.6f, 2.8f, 2.6f));
+    //glm::vec3 sillonNaranja2FinalScale = glm::vec3(2.6f, 2.8f, 2.6f);
+    //newSceneModels.emplace_back("Models/sillonNaranja.obj", sillonNaranja2TargetTransform, sillonNaranja2FinalScale);
 
-    glm::mat4 sillonGrisTargetTransform =
-        glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, 0.18f, 22.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.6f, 2.8f, 2.6f));
-    glm::vec3 sillonGrisFinalScale = glm::vec3(2.6f, 2.8f, 2.6f);
-    newSceneModels.emplace_back("Models/sillonGris.obj", sillonGrisTargetTransform, sillonGrisFinalScale);
+    //glm::mat4 sillonGrisTargetTransform =
+    //    glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, 0.18f, 22.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.6f, 2.8f, 2.6f));
+    //glm::vec3 sillonGrisFinalScale = glm::vec3(2.6f, 2.8f, 2.6f);
+    //newSceneModels.emplace_back("Models/sillonGris.obj", sillonGrisTargetTransform, sillonGrisFinalScale);
 
+    // --- Definir los PRODUCTOS APPLE para la animación con tecla 'I' ---
+    // IPAD
+    glm::vec3 ipadSpawnPoint = glm::vec3(5.75f, 4.5f, 0.9f); // Punto donde aparece y rota (arriba de su pos final)
+    glm::mat4 ipadTargetTransformFinal =
+        glm::translate(glm::mat4(1.0f), glm::vec3(5.75f, 3.6f, 0.9f)) * // Posición final del iPad (la que ya tenías)
+        glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 1.0f)) * // Rotación final
+        glm::scale(glm::mat4(1.0f), glm::vec3(0.025f, 0.015f, 0.025f)); // Escala final
+    glm::vec3 ipadFinalScale = glm::vec3(0.025f, 0.015f, 0.025f);
+    appleProducts.emplace_back("Models/ipad.obj", ipadSpawnPoint, ipadTargetTransformFinal, ipadFinalScale);
 
 
 
@@ -386,12 +460,13 @@ int main()
         GLfloat currentFrame = static_cast<GLfloat>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+        float cappedDeltaTime = glm::min(deltaTime, 0.033f);
 
         glfwPollEvents();
         DoMovement();
-
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
         // --- Animación de DESAPARICIÓN de Modelos Antiguos ---
         if (startDisappearAnimation && !oldModelsVanished) {
@@ -475,6 +550,87 @@ int main()
                 }
             }
         }
+        // --- Animación de PRODUCTOS APPLE (Tecla I) ---
+        bool allNewSceneModelsFinished = true;
+        if (newSceneModels.empty() && appearingModelIndex != -1) allNewSceneModelsFinished = false; // Si hay una anim 'O' pendiente, no estamos listos para Apple
+        else if (!newSceneModels.empty() && (appearingModelIndex == -1 || appearingModelIndex < (int)newSceneModels.size())) allNewSceneModelsFinished = false;
+
+
+        if (startAppleProductAnimationGlobal && oldModelsVanished && allNewSceneModelsFinished &&
+            (currentAppleProductIndex < (int)appleProducts.size() || currentAppleProductIndex == -1)) {
+
+            if (currentAppleProductIndex == -1) { // Iniciar secuencia para productos Apple
+                currentAppleProductIndex = 0;
+                while (currentAppleProductIndex < (int)appleProducts.size() && appleProducts[currentAppleProductIndex].phase == ApplePhase::FINISHED) {
+                    currentAppleProductIndex++;
+                }
+                if (currentAppleProductIndex < (int)appleProducts.size()) {
+                    if (appleProducts[currentAppleProductIndex].phase == ApplePhase::IDLE) { // Solo si no ha empezado
+                        appleProducts[currentAppleProductIndex].StartAnimationSequence();
+                    }
+                }
+                else {
+                    startAppleProductAnimationGlobal = false; // Todos los productos Apple terminaron
+                }
+            }
+
+            if (currentAppleProductIndex < (int)appleProducts.size()) {
+                AppleProductAnimated& appleModel = appleProducts[currentAppleProductIndex];
+
+                if (appleModel.modelPtr && appleModel.phase == ApplePhase::SPAWN_GROWING) {
+                    if (appleGrowDuration > 0.001f) appleModel.currentScaleFactor += (1.0f / appleGrowDuration) * cappedDeltaTime;
+                    else appleModel.currentScaleFactor = 1.0f;
+
+                    if (appleModel.currentScaleFactor >= 1.0f) {
+                        appleModel.currentScaleFactor = 1.0f;
+                        appleModel.phase = ApplePhase::SPAWN_ROTATING;
+                        appleModel.currentYRotationDegrees = 0.0f;
+                        std::cout << "Producto Apple " << appleModel.path << " crecio. Iniciando rotacion." << std::endl;
+                    }
+                }
+                else if (appleModel.modelPtr && appleModel.phase == ApplePhase::SPAWN_ROTATING) {
+                    appleModel.currentYRotationDegrees += appleModel.rotationSpeedDegrees * cappedDeltaTime;
+                    if (appleModel.currentYRotationDegrees >= appleModel.totalYRotationDegrees) {
+                        appleModel.currentYRotationDegrees = appleModel.totalYRotationDegrees; // Clampear
+                        appleModel.phase = ApplePhase::MOVING_TO_FINAL;
+                        appleModel.movementProgress = 0.0f;
+                        appleModel.currentPosition = appleModel.spawnPointApple; // Asegurar que empieza a moverse desde el spawn
+                        std::cout << "Producto Apple " << appleModel.path << " roto. Iniciando movimiento a posicion final." << std::endl;
+                    }
+                }
+                else if (appleModel.modelPtr && appleModel.phase == ApplePhase::MOVING_TO_FINAL) {
+                    glm::vec3 finalPos = glm::vec3(appleModel.targetTransformFinal[3]);
+                    if (appleMoveDuration > 0.001f) {
+                        appleModel.movementProgress += (1.0f / appleMoveDuration) * cappedDeltaTime;
+                    }
+                    else {
+                        appleModel.movementProgress = 1.0f;
+                    }
+
+                    if (appleModel.movementProgress >= 1.0f) {
+                        appleModel.movementProgress = 1.0f;
+                        appleModel.phase = ApplePhase::FINISHED;
+                        appleModel.currentPosition = finalPos;
+                        std::cout << "Producto Apple " << appleModel.path << " en posicion final." << std::endl;
+
+                        currentAppleProductIndex++; // Siguiente producto Apple
+                        if (currentAppleProductIndex < (int)appleProducts.size()) {
+                            if (appleProducts[currentAppleProductIndex].phase == ApplePhase::IDLE) {
+                                appleProducts[currentAppleProductIndex].StartAnimationSequence();
+                            }
+                        }
+                        else {
+                            startAppleProductAnimationGlobal = false;
+                            std::cout << "Todos los productos Apple animados." << std::endl;
+                        }
+                    }
+                    else {
+                        appleModel.currentPosition = glm::mix(appleModel.spawnPointApple, finalPos, appleModel.movementProgress);
+                    }
+                }
+            }
+        }
+
 
         lightingShader.Use();
         glUniform3fv(glGetUniformLocation(lightingShader.Program, "viewPos"), 1, glm::value_ptr(camera.GetPosition()));
@@ -556,6 +712,9 @@ int main()
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
         if (Laboratorio_permanente) Laboratorio_permanente->Draw(lightingShader);
         glBindVertexArray(0);
+
+        
+
 
         // --- Dibujar Modelos ANTIGUOS (animables que desaparecen) ---
         if (!oldModelsVanished || startDisappearAnimation) { // Solo dibujar si no han desaparecido o la animación está activa
@@ -888,6 +1047,45 @@ int main()
 
         }
 
+        // --- Dibujar PRODUCTOS APPLE (Apareciendo con Tecla 'I') ---
+        if (oldModelsVanished && allNewSceneModelsFinished) { // Solo dibujar si los viejos se fueron Y los de la tecla 'O' terminaron
+            for (size_t i = 0; i < appleProducts.size(); ++i) {
+                AppleProductAnimated& appleModel = appleProducts[i];
+                if (appleModel.modelPtr && appleModel.phase != ApplePhase::IDLE) {
+                    modelMatrix = glm::mat4(1.0f);
+                    glm::quat orientationToUse = appleModel.initialOrientation; // Rotación base (la final)
+
+                    if (appleModel.phase == ApplePhase::SPAWN_GROWING) {
+                        modelMatrix = glm::translate(glm::mat4(1.0f), appleModel.currentPosition); // En spawnPointApple
+                        modelMatrix *= glm::mat4_cast(orientationToUse);
+                        modelMatrix = glm::rotate(modelMatrix, glm::radians(appleModel.currentYRotationDegrees), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotación adicional en Y si es necesario aquí
+                        modelMatrix = glm::scale(modelMatrix, appleModel.finalModelScale * appleModel.currentScaleFactor);
+                    }
+                    else if (appleModel.phase == ApplePhase::SPAWN_ROTATING) {
+                        modelMatrix = glm::translate(glm::mat4(1.0f), appleModel.currentPosition); // En spawnPointApple
+                        modelMatrix *= glm::mat4_cast(orientationToUse); // Orientación base
+                        modelMatrix = glm::rotate(modelMatrix, glm::radians(appleModel.currentYRotationDegrees), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotar sobre Y
+                        modelMatrix = glm::scale(modelMatrix, appleModel.finalModelScale);
+                    }
+                    else if (appleModel.phase == ApplePhase::MOVING_TO_FINAL) {
+                        modelMatrix = glm::translate(glm::mat4(1.0f), appleModel.currentPosition); // Posición interpolada
+                        modelMatrix *= glm::mat4_cast(orientationToUse); // Orientación final
+                        // Podrías añadir la rotación final de currentYRotationDegrees aquí si quieres que termine rotado
+                        modelMatrix = glm::rotate(modelMatrix, glm::radians(appleModel.totalYRotationDegrees), glm::vec3(0.0f, 1.0f, 0.0f));
+                        modelMatrix = glm::scale(modelMatrix, appleModel.finalModelScale);
+                    }
+                    else if (appleModel.phase == ApplePhase::FINISHED) {
+                        modelMatrix = appleModel.targetTransformFinal; // Usar la transformación final completa
+                    }
+
+                    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+                    appleModel.modelPtr->Draw(lightingShader);
+                    glBindVertexArray(0);
+                }
+            }
+        }
+
+
 
         //lamparas
         lampShader.Use();
@@ -912,8 +1110,9 @@ int main()
         glfwSwapBuffers(window);
     }
     // --- Limpieza ---
+    for (AppleProductAnimated& ap : appleProducts) { if (ap.modelPtr) delete ap.modelPtr; }
+    appleProducts.clear();
     delete Laboratorio_permanente;
-    if (PantallaNueva_Test) delete PantallaNueva_Test; // Si lo usaste
     for (Model* m : animatableOldModels) { delete m; }
     animatableOldModels.clear();
     for (NewModelAnimated& nm : newSceneModels) { if (nm.modelPtr) delete nm.modelPtr; }
@@ -925,7 +1124,6 @@ int main()
 }
 
 void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode) {
-    // ... (Lógica para teclas P y O sin cambios en la función StartAnimation) ...
     if (action == GLFW_PRESS) keys[key] = true;
     else if (action == GLFW_RELEASE) keys[key] = false;
 
@@ -974,13 +1172,65 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
             std::cout << "Los modelos antiguos aún no han desaparecido (Presiona P)." << std::endl;
         }
     }
-    // ... (tu tecla SPACE para la luz parpadeante)
+
+    // Tecla para Productos Apple
+    if (key == GLFW_KEY_I && action == GLFW_PRESS) {
+        bool allNewSceneModelsAreDone = true;
+        if (!newSceneModels.empty()) { // Solo chequear si hay modelos en la animación 'O'
+            for (const auto& nm : newSceneModels) {
+                if (nm.phase != AppearPhase::FINISHED && nm.phase != AppearPhase::IDLE) { // IDLE porque puede que no haya empezado
+                    allNewSceneModelsAreDone = false;
+                    break;
+                }
+            }
+            if (appearingModelIndex != -1 && appearingModelIndex < (int)newSceneModels.size() && newSceneModels[appearingModelIndex].phase != AppearPhase::FINISHED) {
+                allNewSceneModelsAreDone = false; // Si hay una animación 'O' en curso
+            }
+        }
+
+
+        if (oldModelsVanished && allNewSceneModelsAreDone && !startAppleProductAnimationGlobal) {
+            bool allAppleProductsAreFinished = true;
+            if (appleProducts.empty()) allAppleProductsAreFinished = false;
+            for (const auto& ap : appleProducts) {
+                if (ap.phase != ApplePhase::FINISHED) {
+                    allAppleProductsAreFinished = false;
+                    break;
+                }
+            }
+
+            if (currentAppleProductIndex == -1 || allAppleProductsAreFinished) {
+                currentAppleProductIndex = -1; // Se pondrá a 0 en el bucle de animación
+                for (auto& ap : appleProducts) {
+                    ap.phase = ApplePhase::IDLE;
+                    ap.currentScaleFactor = 0.0f;
+                    ap.currentYRotationDegrees = 0.0f;
+                    ap.movementProgress = 0.0f;
+                    ap.currentPosition = ap.spawnPointApple;
+                }
+                std::cout << "Animacion de PRODUCTOS APPLE (re)iniciada." << std::endl;
+            }
+            startAppleProductAnimationGlobal = true;
+
+        }
+        else if (startAppleProductAnimationGlobal) {
+            std::cout << "Animacion de productos Apple ya en curso." << std::endl;
+        }
+        else if (!oldModelsVanished) {
+            std::cout << "Modelos antiguos aun no desaparecen (P)." << std::endl;
+        }
+        else if (!allNewSceneModelsAreDone) {
+            std::cout << "Animacion de nuevos modelos (O) aun no termina." << std::endl;
+        }
+    }
+    // ... (tecla SPACE)
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
         active = !active;
         if (active) Light1_Color_Factors = glm::vec3(1.0f, 0.5f, 0.2f);
         else Light1_Color_Factors = glm::vec3(1.0f);
     }
 }
+
 
 void MouseCallback(GLFWwindow* window, double xPos, double yPos) {
     if (firstMouse) { lastX = static_cast<GLfloat>(xPos); lastY = static_cast<GLfloat>(yPos); firstMouse = false; }

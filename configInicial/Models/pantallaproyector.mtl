@@ -8,6 +8,6 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.500000
 d 1.000000
 illum 2
-map_Kd M_projector_baseColor.png
-map_Ke M_projector_emissive.png
-map_Bump -bm 1.000000 M_projector_normal.png
+map_Kd texturas/M_projector_baseColor.png
+map_Ke texturas/M_projector_emissive.png
+map_Bump -bm 1.000000 texturas/M_projector_normal.png

@@ -25,7 +25,7 @@ const GLuint WIDTH = 1200, HEIGHT = 1000;
 int SCREEN_WIDTH, SCREEN_HEIGHT;
 
 // Camera
-Camera  camera(glm::vec3(25.0f, 5.0f, 6.5f));
+Camera  camera(glm::vec3(28.0f, 6.0f, 9.5f));
 GLfloat lastX = WIDTH / 2.0;
 GLfloat lastY = HEIGHT / 2.0;
 bool keys[1024];
@@ -68,7 +68,7 @@ bool startAppearAnimationGlobal = false;
 int appearingModelIndex = -1;
 
 // Definir un punto de aparición FIJO, fuera del laboratorio, cerca de la pos inicial de la cámara
-const glm::vec3 FIXED_SPAWN_POINT = glm::vec3(25.0f, 2.0f, 6.5f); // AJUSTA ESTAS COORDENADAS
+const glm::vec3 FIXED_SPAWN_POINT = glm::vec3(25.0f, 2.5f, 9.5f); // AJUSTA ESTAS COORDENADAS
 
 
 struct NewModelAnimated {
@@ -116,8 +116,8 @@ struct NewModelAnimated {
     }
 };
 std::vector<NewModelAnimated> newSceneModels;
-const float growSpeed = 0.6f;    // Un poco más lento para ver mejor
-const float newModelMoveDuration = 2.5f; // Un poco más de tiempo para moverse
+const float growSpeed = 0.3;    // Un poco más lento para ver mejor
+const float newModelMoveDuration = 1.0f; // Un poco más de tiempo para moverse
 // -------------------------------------------------------------
 
 Model* PantallaNueva_Test = nullptr; 
@@ -256,9 +256,118 @@ int main()
     glm::mat4 pantallaNuevaTargetTransform =
         glm::translate(glm::mat4(1.0f), glm::vec3(-24.75f, 0.2f, 16.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.5f, 2.5f, 2.5f));
     glm::vec3 pantallaNuevaFinalScale = glm::vec3(2.5f, 2.5f, 2.5f);
-
     newSceneModels.emplace_back("Models/pantallaNueva.obj", pantallaNuevaTargetTransform, pantallaNuevaFinalScale);
 
+    glm::mat4 pantallaNueva2TargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(-24.75f, 0.2f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.5f, 2.5f, 2.5f));
+    glm::vec3 pantallaNueva2FinalScale = glm::vec3(2.5f, 2.5f, 2.5f);
+    newSceneModels.emplace_back("Models/pantallaNueva.obj", pantallaNueva2TargetTransform, pantallaNueva2FinalScale);
+
+    glm::mat4 pantallaproyectorTargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(-12.75f, 0.2f, 23.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.5f, 2.5f, 2.5f));
+    glm::vec3 pantallaproyectorFinalScale = glm::vec3(2.5f, 2.5f, 2.5f);
+    newSceneModels.emplace_back("Models/pantallaproyector.obj", pantallaproyectorTargetTransform, pantallaproyectorFinalScale);
+
+    glm::mat4 logoIOSTargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(-25.74f, 5.5f, 11.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.1f, 1.3f, 1.1f));
+    glm::vec3 logoIOSFinalScale = glm::vec3(1.1f, 1.3f, 1.1f);
+    newSceneModels.emplace_back("Models/logoIOS2.obj", logoIOSTargetTransform, logoIOSFinalScale);
+
+    glm::mat4 logoUNAMTargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, 6.2f, 23.8f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.3f, 1.3f, 1.3f));
+    glm::vec3 logoUNAMFinalScale = glm::vec3(1.3f, 1.3f, 1.3f);
+    newSceneModels.emplace_back("Models/logoUNAM.obj", logoUNAMTargetTransform, logoUNAMFinalScale);
+
+    glm::mat4 escritorioTargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(-20.25f, 3.35f, 1.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.25f, 1.1f, 1.2f));
+    glm::vec3 escritorioFinalScale = glm::vec3(1.25f, 1.1f, 1.2f);
+    newSceneModels.emplace_back("Models/escritorio.obj", escritorioTargetTransform, escritorioFinalScale);
+
+    glm::mat4 escritorio_2TargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(-11.75f, 3.35f, 1.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.25f, 1.1f, 1.2f));
+    glm::vec3 escritorio_2FinalScale = glm::vec3(1.25f, 1.1f, 1.2f);
+    newSceneModels.emplace_back("Models/escritorio.obj", escritorio_2TargetTransform, escritorio_2FinalScale);
+
+    glm::mat4 escritorio_3TargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(-2.75f, 3.35f, 1.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.25f, 1.1f, 1.2f));
+    glm::vec3 escritorio_3FinalScale = glm::vec3(1.25f, 1.1f, 1.2f);
+    newSceneModels.emplace_back("Models/escritorio.obj", escritorio_3TargetTransform, escritorio_3FinalScale);
+
+    glm::mat4 escritorio_4TargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(5.75f, 3.35f, 1.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.25f, 1.1f, 1.2f));
+    glm::vec3 escritorio_4FinalScale = glm::vec3(1.25f, 1.1f, 1.2f);
+    newSceneModels.emplace_back("Models/escritorio.obj", escritorio_4TargetTransform, escritorio_4FinalScale);
+
+    glm::mat4 sillaTargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(-22.9f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
+    glm::vec3 sillaFinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
+    newSceneModels.emplace_back("Models/silla.obj", sillaTargetTransform, sillaFinalScale);
+
+    glm::mat4 silla2TargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(-20.2f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
+    glm::vec3 silla2FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
+    newSceneModels.emplace_back("Models/silla.obj", silla2TargetTransform, silla2FinalScale);
+
+    glm::mat4 silla3TargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(-14.5f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
+    glm::vec3 silla3FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
+    newSceneModels.emplace_back("Models/silla.obj", silla3TargetTransform, silla3FinalScale);
+
+    glm::mat4 silla4TargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(-11.75f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
+    glm::vec3 silla4FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
+    newSceneModels.emplace_back("Models/silla.obj", silla4TargetTransform, silla4FinalScale);
+
+    glm::mat4 silla5TargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(-5.5f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
+    glm::vec3 silla5FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
+    newSceneModels.emplace_back("Models/silla.obj", silla5TargetTransform, silla5FinalScale);
+
+    glm::mat4 silla6TargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(-2.75f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
+    glm::vec3 silla6FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
+    newSceneModels.emplace_back("Models/silla.obj", silla6TargetTransform, silla6FinalScale);
+
+    glm::mat4 silla7TargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(3.0f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
+    glm::vec3 silla7FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
+    newSceneModels.emplace_back("Models/silla.obj", silla7TargetTransform, silla7FinalScale);
+
+    glm::mat4 silla8TargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(5.75f, 0.17f, 2.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
+    glm::vec3 silla8FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
+    newSceneModels.emplace_back("Models/silla.obj", silla8TargetTransform, silla8FinalScale);
+    
+    glm::mat4 silla9TargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(-22.9f, 0.17f, 15.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
+    glm::vec3 silla9FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
+    newSceneModels.emplace_back("Models/silla.obj", silla9TargetTransform, silla9FinalScale);
+
+    glm::mat4 silla10TargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(-20.25f, 0.17f, 15.2f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.092f, 0.092f, 0.092f));
+    glm::vec3 silla10FinalScale = glm::vec3(0.092f, 0.092f, 0.092f);
+    newSceneModels.emplace_back("Models/silla.obj", silla10TargetTransform, silla10FinalScale);
+
+    glm::mat4 sillonNaranjaTargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.18f, 22.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.6f, 2.8f, 2.6f));
+    glm::vec3 sillonNaranjaFinalScale = glm::vec3(2.6f, 2.8f, 2.6f);
+    newSceneModels.emplace_back("Models/sillonNaranja.obj", sillonNaranjaTargetTransform, sillonNaranjaFinalScale);
+
+    glm::mat4 sillonNaranja2TargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.18f, 22.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.6f, 2.8f, 2.6f));
+    glm::vec3 sillonNaranja2FinalScale = glm::vec3(2.6f, 2.8f, 2.6f);
+    newSceneModels.emplace_back("Models/sillonNaranja.obj", sillonNaranja2TargetTransform, sillonNaranja2FinalScale);
+
+    glm::mat4 sillonGrisTargetTransform =
+        glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, 0.18f, 22.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.6f, 2.8f, 2.6f));
+    glm::vec3 sillonGrisFinalScale = glm::vec3(2.6f, 2.8f, 2.6f);
+    newSceneModels.emplace_back("Models/sillonGris.obj", sillonGrisTargetTransform, sillonGrisFinalScale);
+
+
+
+
+
+    
 
     GLuint lampVAO, lampVBO;
     glGenVertexArrays(1, &lampVAO);
@@ -596,7 +705,7 @@ int main()
 
                 // Silla 10
                 modelMatrix = glm::mat4(1.0f);
-                modelMatrix = glm::translate(modelMatrix, glm::vec3(-20.25f, 0.17f, 15.2))*
+                modelMatrix = glm::translate(modelMatrix, glm::vec3(-20.25f, 0.17f, 15.2f))*
                     glm::rotate(glm::mat4(1.0f), glm::radians(-15.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
                     glm::scale(modelMatrix, glm::vec3(0.092f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(sillaCurrentScale));

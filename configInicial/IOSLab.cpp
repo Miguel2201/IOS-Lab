@@ -30,13 +30,32 @@ GLfloat lastX = WIDTH / 2.0;
 GLfloat lastY = HEIGHT / 2.0;
 bool keys[1024];
 bool firstMouse = true;
-bool active; // Para la luz parpadeante
+//bool active; // Para la luz parpadeante
 
-// Point Lights
+// --- Atributos de Luces ---
+bool techoLightsOn = false; // NUEVO: Estado para las luces de techo fijas
+bool parpadeoLight0_active = false; // Renombrado de 'active' para claridad
+
+// Posiciones para las 4 luces puntuales (como lámparas de techo)
+// AJUSTA ESTAS POSICIONES PARA QUE ESTÉN EN EL TECHO DE TU LABORATORIO
 glm::vec3 pointLightPositions[] = {
-    glm::vec3(-22.75f, 9.25f, 11.0f), glm::vec3(-18.75f, 9.25f, 11.0f),
-    glm::vec3(-14.75f, 9.25f, 11.0f), glm::vec3(-8.75f, 9.25f, 11.0f)
+    glm::vec3(-20.0f, 9.33f, 5.0f),  // Ejemplo: Lámpara 1
+    glm::vec3(-10.0f, 9.33f, 5.0f),  // Ejemplo: Lámpara 2
+    glm::vec3(-20.0f, 9.33f, 15.0f), // Ejemplo: Lámpara 3
+    glm::vec3(-10.0f, 9.33f, 15.0f)  // Ejemplo: Lámpara 4
 };
+
+// Propiedades para las luces de techo cuando están encendidas constantemente
+const glm::vec3 TECHO_LIGHT_AMBIENT = glm::vec3(0.2f, 0.2f, 0.2f); // Ambiente sutil
+const glm::vec3 TECHO_LIGHT_DIFFUSE = glm::vec3(0.8f, 0.8f, 0.75f); // Luz principal (ligeramente cálida)
+const glm::vec3 TECHO_LIGHT_SPECULAR = glm::vec3(0.7f, 0.7f, 0.7f); // Brillos
+const GLfloat TECHO_LIGHT_CONSTANT = 1.0f;
+const GLfloat TECHO_LIGHT_LINEAR = 0.024f;    // AJUSTA ESTOS VALORES
+const GLfloat TECHO_LIGHT_QUADRATIC = 0.0027f; // AJUSTA ESTOS VALORES
+
+glm::vec3 Light0_Effect_Color_Factors = glm::vec3(0); // Para el efecto de parpadeo de pointLights[0]
+
+
 float lampVertices[] = { 
     -0.5f, -0.5f, -0.5f,  0.5f, -0.5f, -0.5f,  0.5f,  0.5f, -0.5f,  0.5f,  0.5f, -0.5f, -0.5f,  0.5f, -0.5f, -0.5f, -0.5f, -0.5f,
     -0.5f, -0.5f,  0.5f,  0.5f, -0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  0.5f, -0.5f,  0.5f,  0.5f, -0.5f, -0.5f,  0.5f,
@@ -60,6 +79,7 @@ std::vector<float> oldModelScales;
 std::map<Model*, glm::mat4> originalOldModelTransforms;
 std::map<Model*, size_t> oldModelToIndexMap;
 Model* Laboratorio_permanente = nullptr;
+Model* LogoAPPLE = nullptr;
 
 
 
@@ -175,8 +195,8 @@ struct AppleProductAnimated {
 };
 
 std::vector<NewModelAnimated> newSceneModels;
-const float growSpeed = 0.3;    // Un poco más lento para ver mejor
-const float newModelMoveDuration = 1.0f; // Un poco más de tiempo para moverse
+const float growSpeed = 0.2;    // Un poco más lento para ver mejor
+const float newModelMoveDuration = 0.7f; // Un poco más de tiempo para moverse
 std::vector<AppleProductAnimated> appleProducts;
 const float appleGrowDuration = 1.5f;
 const float appleMoveDuration = 2.0f;
@@ -217,6 +237,9 @@ int main()
     // --- Carga de Modelos INICIALES (que desaparecerán) ---
     size_t currentIndexOldAnimatable = 0;
     Laboratorio_permanente = new Model((char*)"Models/laboratorio.obj");
+
+    LogoAPPLE = new Model((char*)"Models/logoAPPLE.obj");
+    
 	
 
     Model* pAire = new Model((char*)"Models/aire.obj");
@@ -312,6 +335,9 @@ int main()
     originalOldModelTransforms[pLogoUNAM] = transformLogoUNAM;
     oldModelToIndexMap[pLogoUNAM] = currentIndexOldAnimatable++;
 
+    
+
+    
 
     oldModelScales.resize(animatableOldModels.size(), 1.0f);
 
@@ -328,7 +354,7 @@ int main()
     glm::vec3 pantallaNueva2FinalScale = glm::vec3(2.5f, 2.5f, 2.5f);
     newSceneModels.emplace_back("Models/pantallaNueva.obj", pantallaNueva2TargetTransform, pantallaNueva2FinalScale);
 
-    glm::mat4 pantallaproyectorTargetTransform =
+    /*glm::mat4 pantallaproyectorTargetTransform =
         glm::translate(glm::mat4(1.0f), glm::vec3(-12.75f, 0.2f, 23.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(2.5f, 2.5f, 2.5f));
     glm::vec3 pantallaproyectorFinalScale = glm::vec3(2.5f, 2.5f, 2.5f);
     newSceneModels.emplace_back("Models/pantallaproyector.obj", pantallaproyectorTargetTransform, pantallaproyectorFinalScale);
@@ -336,7 +362,7 @@ int main()
     glm::mat4 logoIOSTargetTransform =
         glm::translate(glm::mat4(1.0f), glm::vec3(-25.74f, 5.5f, 11.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.1f, 1.3f, 1.1f));
     glm::vec3 logoIOSFinalScale = glm::vec3(1.1f, 1.3f, 1.1f);
-    newSceneModels.emplace_back("Models/logoIOS2.obj", logoIOSTargetTransform, logoIOSFinalScale);
+    newSceneModels.emplace_back("Models/logoIOS2.obj", logoIOSTargetTransform, logoIOSFinalScale);*/
 
     //glm::mat4 logoUNAMTargetTransform =
     //    glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, 6.2f, 23.8f)) * glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.3f, 1.3f, 1.3f));
@@ -428,21 +454,48 @@ int main()
     //glm::vec3 sillonGrisFinalScale = glm::vec3(2.6f, 2.8f, 2.6f);
     //newSceneModels.emplace_back("Models/sillonGris.obj", sillonGrisTargetTransform, sillonGrisFinalScale);
 
+    //glm::mat4 escritorio2TargetTransform =
+    //    glm::translate(glm::mat4(1.0f), glm::vec3(-22.0f, 0.25f, 15.0f)) *glm::scale(glm::mat4(1.0f), glm::vec3(0.06f, 0.10f, 0.06));  
+    //glm::vec3 escritorio2FinalScale = glm::vec3(0.06f, 0.10f, 0.06f);
+    //newSceneModels.emplace_back("Models/escritorio2.obj", escritorio2TargetTransform, escritorio2FinalScale);
+
+    //glm::mat4 escritorio2_2TargetTransform =
+    //    glm::translate(glm::mat4(1.0f), glm::vec3(-9.57f, 0.25f, 8.74f)) *glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *  glm::scale(glm::mat4(1.0f), glm::vec3(0.06f, 0.10f, 0.06f));
+    //glm::vec3 escritorio2_2FinalScale = glm::vec3(0.06f, 0.10f, 0.06f);
+    //newSceneModels.emplace_back("Models/escritorio2.obj", escritorio2_2TargetTransform, escritorio2_2FinalScale);
+    //
+    //glm::mat4 escritorio2_3TargetTransform =
+    //    glm::translate(glm::mat4(1.0f), glm::vec3(-5.0f, 0.25f, 8.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(220.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.06f, 0.10f, 0.06f));
+    //glm::vec3 escritorio2_3FinalScale = glm::vec3(0.06f, 0.10f, 0.06f);
+    //newSceneModels.emplace_back("Models/escritorio2.obj", escritorio2_3TargetTransform, escritorio2_3FinalScale);
+
+    //glm::mat4 escritorio2_4TargetTransform =
+    //    glm::translate(glm::mat4(1.0f), glm::vec3(-0.57f, 0.25f, 15.75f)) * glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.06f, 0.10f, 0.06f));
+    //glm::vec3 escritorio2_4FinalScale = glm::vec3(0.06f, 0.10f, 0.06f);
+    //newSceneModels.emplace_back("Models/escritorio2.obj", escritorio2_4TargetTransform, escritorio2_4FinalScale);
+
+
     // --- Definir los PRODUCTOS APPLE para la animación con tecla 'I' ---
     // IPAD
-    glm::vec3 ipadSpawnPoint = glm::vec3(5.75f, 4.5f, 0.9f); // Punto donde aparece y rota (arriba de su pos final)
+    glm::vec3 ipadSpawnPoint = glm::vec3(5.75f, 4.5f, 0.7f); // Punto donde aparece y rota (arriba de su pos final)
     glm::mat4 ipadTargetTransformFinal =
-        glm::translate(glm::mat4(1.0f), glm::vec3(5.75f, 3.6f, 0.9f)) * // Posición final del iPad (la que ya tenías)
+        glm::translate(glm::mat4(1.0f), glm::vec3(5.75f, 3.6f, 0.7f)) * // Posición final del iPad (la que ya tenías)
         glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 1.0f)) * // Rotación final
-        glm::scale(glm::mat4(1.0f), glm::vec3(0.025f, 0.015f, 0.025f)); // Escala final
-    glm::vec3 ipadFinalScale = glm::vec3(0.025f, 0.015f, 0.025f);
-    appleProducts.emplace_back("Models/ipad.obj", ipadSpawnPoint, ipadTargetTransformFinal, ipadFinalScale);
+        glm::scale(glm::mat4(1.0f), glm::vec3(0.020f, 0.015f, 0.020f)); // Escala final
+    glm::vec3 ipadFinalScale = glm::vec3(0.020f, 0.015f, 0.020f);
+    appleProducts.emplace_back("Models/ipadPro.obj", ipadSpawnPoint, ipadTargetTransformFinal, ipadFinalScale);
 
-
-
+    glm::vec3 homepodSpawnPoint = glm::vec3(7.75f, 4.5f, 0.7f); // Punto donde aparece y rota (arriba de su pos final)
+    glm::mat4 homepodTargetTransformFinal =
+        glm::translate(glm::mat4(1.0f), glm::vec3(7.75f, 3.6f, 0.7f)) * // Posición final del iPad (la que ya tenías)
+        glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * // Rotación final
+        glm::scale(glm::mat4(1.0f), glm::vec3(0.085f, 0.008f, 0.008f)); // Escala final
+    glm::vec3 homepodFinalScale = glm::vec3(0.008f, 0.008f, 0.008f);
+    appleProducts.emplace_back("Models/homepod2.obj", homepodSpawnPoint, homepodTargetTransformFinal, homepodFinalScale);
 
     
-
+    
+    // VAO y VBO para las lámparas visuales
     GLuint lampVAO, lampVBO;
     glGenVertexArrays(1, &lampVAO);
     glGenBuffers(1, &lampVBO);
@@ -633,60 +686,67 @@ int main()
 
 
         lightingShader.Use();
-        glUniform3fv(glGetUniformLocation(lightingShader.Program, "viewPos"), 1, glm::value_ptr(camera.GetPosition()));
+        // ... (uniforms de viewPos, projection, view) ...
+        GLint viewPosLoc = glGetUniformLocation(lightingShader.Program, "viewPos");
+        glUniform3f(viewPosLoc, camera.GetPosition().x, camera.GetPosition().y, camera.GetPosition().z);
         glm::mat4 view = camera.GetViewMatrix();
-        glUniformMatrix4fv(glGetUniformLocation(lightingShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(glGetUniformLocation(lightingShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        GLint viewLoc = glGetUniformLocation(lightingShader.Program, "view");
+        GLint projLoc = glGetUniformLocation(lightingShader.Program, "projection");
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
 
         // --- Configuración de Luces (DirLight, PointLights) ---
         // Luz Direccional
         glUniform3f(glGetUniformLocation(lightingShader.Program, "dirLight.direction"), -0.2f, -1.0f, -0.3f);
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "dirLight.ambient"), 0.7f, 0.7f, 0.7f); // Ambiente más sutil
+        glUniform3f(glGetUniformLocation(lightingShader.Program, "dirLight.ambient"), 0.2f, 0.2f, 0.2f); // Ambiente más sutil
         glUniform3f(glGetUniformLocation(lightingShader.Program, "dirLight.diffuse"), 0.5f, 0.5f, 0.5f);
         glUniform3f(glGetUniformLocation(lightingShader.Program, "dirLight.specular"), 0.5f, 0.5f, 0.5f);
-        // Luces Puntuales
-        glm::vec3 lightColor;
-        lightColor.x = abs(sin(glfwGetTime() * Light1_Color_Factors.x));
-        lightColor.y = abs(sin(glfwGetTime() * Light1_Color_Factors.y));
-        lightColor.z = abs(sin(glfwGetTime() * Light1_Color_Factors.z)); // Usar abs para evitar colores negativos
 
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[0].position"), pointLightPositions[0].x, pointLightPositions[0].y, pointLightPositions[0].z);
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[0].ambient"), lightColor.x, lightColor.y, lightColor.z);
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[0].diffuse"), lightColor.x, lightColor.y, lightColor.z);
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[0].specular"), 0.0f, 0.0f, 0.0f);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[0].constant"), 1.0f);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[0].linear"), 0.045f);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[0].quadratic"), 0.075f);
+        // Configuración de las 4 Luces Puntuales
+        for (int i = 0; i < 4; ++i) { // Asumiendo 4 luces
+            std::string iStr = std::to_string(i);
+            std::string baseName = "pointLights[" + iStr + "].";
 
-        // Point light 2
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[1].position"), pointLightPositions[1].x, pointLightPositions[1].y, pointLightPositions[1].z);
+            glUniform3fv(glGetUniformLocation(lightingShader.Program, (baseName + "position").c_str()), 1, glm::value_ptr(pointLightPositions[i]));
 
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[1].ambient"), 0.05f, 0.05f, 0.05f);
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[1].diffuse"), 0.0f, 0.05f, 0.0f);
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[1].specular"), 0.0f, 0.0f, 0.0f);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[1].constant"), 1.0f);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[1].linear"), 0.0f);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[1].quadratic"), 0.0f);
+            if (techoLightsOn) { // MODO: Luces de techo constantes
+                glUniform3fv(glGetUniformLocation(lightingShader.Program, (baseName + "ambient").c_str()), 1, glm::value_ptr(TECHO_LIGHT_AMBIENT));
+                glUniform3fv(glGetUniformLocation(lightingShader.Program, (baseName + "diffuse").c_str()), 1, glm::value_ptr(TECHO_LIGHT_DIFFUSE));
+                glUniform3fv(glGetUniformLocation(lightingShader.Program, (baseName + "specular").c_str()), 1, glm::value_ptr(TECHO_LIGHT_SPECULAR));
+                glUniform1f(glGetUniformLocation(lightingShader.Program, (baseName + "constant").c_str()), TECHO_LIGHT_CONSTANT);
+                glUniform1f(glGetUniformLocation(lightingShader.Program, (baseName + "linear").c_str()), TECHO_LIGHT_LINEAR);
+                glUniform1f(glGetUniformLocation(lightingShader.Program, (baseName + "quadratic").c_str()), TECHO_LIGHT_QUADRATIC);
+            }
+            else { // MODO: Parpadeo (o como lo tenías antes para pointLights[0] y las otras apagadas/diferentes)
+                if (i == 0) { // Solo la luz 0 parpadea en este modo
+                    glm::vec3 effectColor;
+                    if (parpadeoLight0_active) { // Si el efecto de parpadeo está activo para la luz 0
+                        effectColor.x = abs(sin(glfwGetTime() * Light0_Effect_Color_Factors.x));
+                        effectColor.y = abs(sin(glfwGetTime() * Light0_Effect_Color_Factors.y));
+                        effectColor.z = abs(sin(glfwGetTime() * Light0_Effect_Color_Factors.z));
+                    }
+                    else { // Si el efecto está "apagado", usa un color base tenue o completamente apagado
+                        effectColor = glm::vec3(0.15f); // Luz muy tenue
+                    }
+                    glUniform3fv(glGetUniformLocation(lightingShader.Program, (baseName + "ambient").c_str()), 1, glm::value_ptr(effectColor * 0.2f));
+                    glUniform3fv(glGetUniformLocation(lightingShader.Program, (baseName + "diffuse").c_str()), 1, glm::value_ptr(effectColor));
+                    glUniform3fv(glGetUniformLocation(lightingShader.Program, (baseName + "specular").c_str()), 1, glm::value_ptr(glm::vec3(0.1f))); // Poco especular
+                    glUniform1f(glGetUniformLocation(lightingShader.Program, (baseName + "constant").c_str()), 1.0f);
+                    glUniform1f(glGetUniformLocation(lightingShader.Program, (baseName + "linear").c_str()), 0.09f); // Atenuación para parpadeo
+                    glUniform1f(glGetUniformLocation(lightingShader.Program, (baseName + "quadratic").c_str()), 0.032f);
+                }
+                else { // Luces 1, 2, 3 en modo "no techo" (pueden estar apagadas o con otra config)
+                    glUniform3f(glGetUniformLocation(lightingShader.Program, (baseName + "ambient").c_str()), 0.0f, 0.0f, 0.0f);
+                    glUniform3f(glGetUniformLocation(lightingShader.Program, (baseName + "diffuse").c_str()), 0.0f, 0.0f, 0.0f);
+                    glUniform3f(glGetUniformLocation(lightingShader.Program, (baseName + "specular").c_str()), 0.0f, 0.0f, 0.0f);
+                    glUniform1f(glGetUniformLocation(lightingShader.Program, (baseName + "constant").c_str()), 1.0f);
+                    glUniform1f(glGetUniformLocation(lightingShader.Program, (baseName + "linear").c_str()), 0.7f); // Atenuación fuerte si están "apagadas"
+                    glUniform1f(glGetUniformLocation(lightingShader.Program, (baseName + "quadratic").c_str()), 1.8f);
+                }
+            }
+        }
 
-        // Point light 3
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[2].position"), pointLightPositions[2].x, pointLightPositions[2].y, pointLightPositions[2].z);
-
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[2].ambient"), 0.0f, 0.0f, 0.0f);
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[2].diffuse"), 0.0f, 0.0f, 0.0f);
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[2].specular"), 0.0f, 0.0f, 0.0f);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[2].constant"), 1.0f);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[2].linear"), 0.0f);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[2].quadratic"), 0.0f);
-
-        // Point light 4
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[3].position"), pointLightPositions[3].x, pointLightPositions[3].y, pointLightPositions[3].z);
-
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[3].ambient"), 0.10f, 0.0f, 0.10f);
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[3].diffuse"), 0.10f, 0.0f, 0.10f);
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[3].specular"), 0.0f, 0.0f, 0.0f);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[3].constant"), 1.0f);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[3].linear"), 0.0f);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[3].quadratic"), 0.0f);
 
         // SpotLight (Linterna)
         glUniform3f(glGetUniformLocation(lightingShader.Program, "spotLight.position"), camera.GetPosition().x, camera.GetPosition().y, camera.GetPosition().z);
@@ -713,7 +773,13 @@ int main()
         if (Laboratorio_permanente) Laboratorio_permanente->Draw(lightingShader);
         glBindVertexArray(0);
 
-        
+        modelMatrix = glm::mat4(1.0f); //para inicio de nueva animacion
+        modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(7.75f, 5.5f, 11.7f)) * // Posición inicial
+            glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * 
+            glm::scale(glm::mat4(1.0f), glm::vec3(0.4f, 0.4f, 0.0f)); // Escala 
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+        if (LogoAPPLE) LogoAPPLE->Draw(lightingShader);
+        glBindVertexArray(0);
 
 
         // --- Dibujar Modelos ANTIGUOS (animables que desaparecen) ---
@@ -1086,9 +1152,9 @@ int main()
         }
 
 
-
-        //lamparas
+        // --- Dibujar Lámparas Visuales ---
         lampShader.Use();
+        // ... (uniforms de projection y view para lampShader) ...
         GLint lampModelLoc = glGetUniformLocation(lampShader.Program, "model");
         GLint lampViewLoc = glGetUniformLocation(lampShader.Program, "view");
         GLint lampProjLoc = glGetUniformLocation(lampShader.Program, "projection");
@@ -1097,11 +1163,11 @@ int main()
 
         glBindVertexArray(lampVAO);
         glm::mat4 lampModelMatrix;
-        for (GLuint i = 0; i < 4; i++)
+        for (GLuint i = 0; i < 4; i++) // Dibuja las 4 lámparas visuales
         {
             lampModelMatrix = glm::mat4(1.0f);
             lampModelMatrix = glm::translate(lampModelMatrix, pointLightPositions[i]);
-            lampModelMatrix = glm::scale(lampModelMatrix, glm::vec3(0.2f));
+            lampModelMatrix = glm::scale(lampModelMatrix, glm::vec3(2.0f, 0.2f, 0.5f)); // Escala rectangular
             glUniformMatrix4fv(lampModelLoc, 1, GL_FALSE, glm::value_ptr(lampModelMatrix));
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
@@ -1109,6 +1175,8 @@ int main()
 
         glfwSwapBuffers(window);
     }
+
+
     // --- Limpieza ---
     for (AppleProductAnimated& ap : appleProducts) { if (ap.modelPtr) delete ap.modelPtr; }
     appleProducts.clear();
@@ -1222,13 +1290,39 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
         else if (!allNewSceneModelsAreDone) {
             std::cout << "Animacion de nuevos modelos (O) aun no termina." << std::endl;
         }
+
+        // Tecla para alternar luces de techo (ej. 'L')
+        if (key == GLFW_KEY_L && action == GLFW_PRESS) {
+            techoLightsOn = !techoLightsOn;
+            if (techoLightsOn) {
+                std::cout << "Luces de techo ENCENDIDAS (constante)" << std::endl;
+                // Si las luces de techo se encienden, quizás quieras apagar el efecto de parpadeo de la luz 0
+                parpadeoLight0_active = false;
+                Light0_Effect_Color_Factors = glm::vec3(0.0f); // Detener el cálculo del color de parpadeo
+            }
+            else {
+                std::cout << "Luces de techo APAGADAS (o modo parpadeo si SPACE está activo)" << std::endl;
+            }
+        }
     }
-    // ... (tecla SPACE)
+    // Tecla para activar/desactivar parpadeo de la luz 0 (si techoLightsOn es false)
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
-        active = !active;
-        if (active) Light1_Color_Factors = glm::vec3(1.0f, 0.5f, 0.2f);
-        else Light1_Color_Factors = glm::vec3(1.0f);
+        if (!techoLightsOn) { // Solo permitir control de parpadeo si las luces de techo no están fijas
+            parpadeoLight0_active = !parpadeoLight0_active;
+            if (parpadeoLight0_active) {
+                Light0_Effect_Color_Factors = glm::vec3(1.0f, 0.5f, 0.2f); // O los factores que usabas
+                std::cout << "Luz 0 parpadeando" << std::endl;
+            }
+            else {
+                Light0_Effect_Color_Factors = glm::vec3(0.0f); // Detiene el cambio de color
+                std::cout << "Luz 0 parpadeo detenido (tenue o apagada)" << std::endl;
+            }
+        }
+        else {
+            std::cout << "Las luces de techo están fijas, presiona L para cambiar modo." << std::endl;
+        }
     }
+
 }
 
 
